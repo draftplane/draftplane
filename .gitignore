@@ -1,0 +1,9 @@
+.DS_Store
+bin/
+dist/
+
+# Scratch probes: zz_*_test.go files are throwaway harnesses for driving the
+# real TUI by hand. They live in the working tree on purpose and must never
+# be committed.
+app/zz_*_test.go
+cmd/draftplane/zz_*_test.go

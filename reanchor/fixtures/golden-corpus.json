@@ -1,0 +1,296 @@
+[
+  {
+    "id": "c1",
+    "status": "orphaned",
+    "candidates": [
+      {
+        "headingPath": [
+          "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+          "Background and motivation"
+        ],
+        "text": "and stores corrections",
+        "score": 0.6
+      },
+      {
+        "headingPath": [
+          "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+          "Ground rules"
+        ],
+        "text": "updates it. Every correction is",
+        "score": 0.5217391304347826
+      },
+      {
+        "headingPath": [
+          "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+          "Ground rules"
+        ],
+        "text": "and calibration records store",
+        "score": 0.5074626865671642
+      }
+    ]
+  },
+  {
+    "id": "c2",
+    "status": "orphaned",
+    "candidates": [
+      {
+        "headingPath": [
+          "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+          "Out of scope for v1 (tracked)"
+        ],
+        "text": "read raw for that",
+        "score": 0.47619047619047616
+      },
+      {
+        "headingPath": [
+          "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+          "Ground rules"
+        ],
+        "text": "and the alert evaluator are readers;",
+        "score": 0.4918032786885246
+      },
+      {
+        "headingPath": [
+          "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+          "Ground rules"
+        ],
+        "text": "header rather",
+        "score": 0.47368421052631576
+      }
+    ]
+  },
+  {
+    "id": "c3",
+    "status": "fuzzy",
+    "headingPath": [
+      "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+      "Ground rules"
+    ],
+    "confidence": 0.7551020408163265,
+    "matchedText": "only the rollup job holds write access to the rollup tables, so a misbehaving reader has no way to corrupt them."
+  },
+  {
+    "id": "c4",
+    "status": "moved",
+    "headingPath": [
+      "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+      "Ground rules"
+    ],
+    "confidence": 0.95,
+    "matchedText": "station-local time is never a grouping key"
+  },
+  {
+    "id": "c5",
+    "status": "moved",
+    "headingPath": [
+      "Execution plan",
+      "Phase 1 — Schema",
+      "Sensors, channels, and placement"
+    ],
+    "confidence": 0.95,
+    "matchedText": "create unique index channels_sensor_quantity_height on channels (sensor_id, quantity, height_cm);"
+  },
+  {
+    "id": "c6",
+    "status": "moved",
+    "headingPath": [
+      "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+      "Risks and rejected alternatives"
+    ],
+    "confidence": 0.95,
+    "matchedText": "a silent-drift failure mode"
+  },
+  {
+    "id": "c7",
+    "status": "fuzzy",
+    "headingPath": [
+      "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+      "The batch model"
+    ],
+    "confidence": 0.8104575163398693,
+    "matchedText": "a replayed `batch_id` can only duplicate a *log line* — it can never duplicate a reading."
+  },
+  {
+    "id": "c8",
+    "status": "fuzzy",
+    "headingPath": [
+      "Execution plan",
+      "Phase 4 — Rollup scheduling (in `cmd/rollupd`)"
+    ],
+    "confidence": 0.851063829787234,
+    "matchedText": "late row redoes the hour,"
+  },
+  {
+    "id": "c9",
+    "status": "moved",
+    "headingPath": [
+      "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+      "Station and sensor lifecycle"
+    ],
+    "confidence": 0.95,
+    "matchedText": "the earliest-installed remaining sensor becomes the reference"
+  },
+  {
+    "id": "c10",
+    "status": "fuzzy",
+    "headingPath": [
+      "Execution plan",
+      "Exit criteria"
+    ],
+    "confidence": 0.9032258064516129,
+    "matchedText": "a batch cannot be ingested twice."
+  },
+  {
+    "id": "c11",
+    "status": "fuzzy",
+    "headingPath": [
+      "Execution plan",
+      "Phase 2 — Persistence layer (repositories and jobs)",
+      "Job functions (every write flows through here, including rollup persistence)"
+    ],
+    "confidence": 0.8636363636363636,
+    "matchedText": "replacing the old non-atomic delete-then-insert."
+  },
+  {
+    "id": "c12",
+    "status": "orphaned",
+    "candidates": [
+      {
+        "headingPath": [
+          "Execution plan",
+          "Phase 3 — `internal/decode`: stateless parsing and unit normalization"
+        ],
+        "text": "The decoder's database role reads raw readings",
+        "score": 0.627906976744186
+      },
+      {
+        "headingPath": [
+          "Execution plan",
+          "Phase 3 — `internal/decode`: stateless parsing and unit normalization"
+        ],
+        "text": "role reads the hourly",
+        "score": 0.5573770491803278
+      },
+      {
+        "headingPath": [
+          "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+          "Ground rules"
+        ],
+        "text": "are readers; only the rollup job holds",
+        "score": 0.5384615384615384
+      }
+    ]
+  },
+  {
+    "id": "s1",
+    "status": "orphaned",
+    "candidates": [
+      {
+        "headingPath": [
+          "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+          "Station and sensor lifecycle"
+        ],
+        "text": "Station and sensor lifecycle",
+        "score": 0.3915414283814337
+      },
+      {
+        "headingPath": [
+          "Execution plan",
+          "Phase 3 — `internal/decode`: stateless parsing and unit normalization"
+        ],
+        "text": "Phase 3 — `internal/decode`: stateless parsing and unit normalization",
+        "score": 0.34356572058418294
+      },
+      {
+        "headingPath": [
+          "Meridian Station Data: Calibration-Aware Readings and Tiered Retention"
+        ],
+        "text": "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+        "score": 0.33843478260869564
+      }
+    ]
+  },
+  {
+    "id": "s2",
+    "status": "moved",
+    "headingPath": [
+      "Execution plan",
+      "Phase 1 — Schema",
+      "Sensors, channels, and placement"
+    ],
+    "confidence": 0.6703363914373088,
+    "matchedText": "Sensors, channels, and placement"
+  },
+  {
+    "id": "s3",
+    "status": "orphaned",
+    "candidates": [
+      {
+        "headingPath": [
+          "Execution plan",
+          "Phase 5 — Console views and attribution"
+        ],
+        "text": "Phase 5 — Console views and attribution",
+        "score": 0.43547854785478546
+      },
+      {
+        "headingPath": [
+          "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+          "The batch model"
+        ],
+        "text": "The batch model",
+        "score": 0.4251378446115288
+      },
+      {
+        "headingPath": [
+          "Execution plan",
+          "Phase 1 — Schema",
+          "Ingest batches (replacing the `uploads` table)"
+        ],
+        "text": "Ingest batches (replacing the `uploads` table)",
+        "score": 0.4032707450030285
+      }
+    ]
+  },
+  {
+    "id": "s4",
+    "status": "orphaned",
+    "candidates": [
+      {
+        "headingPath": [
+          "Execution plan",
+          "Phase 1 — Schema",
+          "Calibration records"
+        ],
+        "text": "Calibration records",
+        "score": 0.2875331564986737
+      },
+      {
+        "headingPath": [
+          "Execution plan",
+          "Phase 1 — Schema",
+          "Retention tiers"
+        ],
+        "text": "Retention tiers",
+        "score": 0.26334426229508195
+      },
+      {
+        "headingPath": [
+          "Execution plan"
+        ],
+        "text": "Execution plan",
+        "score": 0.25
+      }
+    ]
+  },
+  {
+    "id": "s5",
+    "status": "moved",
+    "headingPath": [
+      "Meridian Station Data: Calibration-Aware Readings and Tiered Retention",
+      "Out of scope for v1 (tracked)"
+    ],
+    "confidence": 0.7806608801583674,
+    "matchedText": "Out of scope for v1 (tracked)"
+  }
+]

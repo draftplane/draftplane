@@ -1,0 +1,17 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck      # unchecked errors
+    - govet         # what `go vet` runs, plus more
+    - ineffassign   # assignments that are never used
+    - staticcheck   # the deep static-analysis suite
+    - unused        # unused code
+  settings:
+    staticcheck:
+      checks:
+        - all
+
+formatters:
+  enable:
+    - gofmt

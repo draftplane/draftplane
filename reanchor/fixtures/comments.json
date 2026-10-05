@@ -1,0 +1,126 @@
+[
+  {
+    "id": "c1",
+    "headingPath": ["Station Data: Calibrated Readings, Rollups, and Retention", "Context"],
+    "span": "any correction silently rewrites history",
+    "note": "Worth saying exactly which figures changed when this happened"
+  },
+  {
+    "id": "c2",
+    "headingPath": [
+      "Station Data: Calibrated Readings, Rollups, and Retention",
+      "Context",
+      "Framing (keep this in view)"
+    ],
+    "span": "not for leaderboard theater",
+    "note": "Love this framing — keep it in the final doc"
+  },
+  {
+    "id": "c3",
+    "headingPath": [
+      "Station Data: Calibrated Readings, Rollups, and Retention",
+      "Design decisions (settled — not open questions)"
+    ],
+    "span": "only the rollup job writes to the rollup tables, so a buggy reader cannot corrupt them",
+    "note": "Confirm the console's role really has no write grant before this ships"
+  },
+  {
+    "id": "c4",
+    "headingPath": [
+      "Station Data: Calibrated Readings, Rollups, and Retention",
+      "Design decisions (settled — not open questions)"
+    ],
+    "span": "station-local time is never a grouping key",
+    "note": "Should the console still label charts in local time next to UTC?"
+  },
+  {
+    "id": "c5",
+    "headingPath": ["Phase 1 — Schema", "1b. Sensors and channels"],
+    "span": "create unique index channels_sensor_quantity_height on channels (sensor_id, quantity, height_cm);",
+    "note": "This index doubles as the mapping script's lookup path — say so in the migration"
+  },
+  {
+    "id": "c6",
+    "headingPath": [
+      "Station Data: Calibrated Readings, Rollups, and Retention",
+      "Deferred (tracked, out of scope for v1)"
+    ],
+    "span": "a silent-drift failure mode",
+    "note": "Agree — revisit once there is a year of calibrated data"
+  },
+  {
+    "id": "c7",
+    "headingPath": ["Phase 4 — Batches: the ingest attribution model"],
+    "span": "a replayed `batch_id` only duplicates a log line — never a reading",
+    "note": "This invariant should be a test"
+  },
+  {
+    "id": "c8",
+    "headingPath": ["Phase 5 — Rollup scheduler (minimal in-process, in `cmd/rollupd`)"],
+    "span": "late row → redo the hour",
+    "note": "Consider capping how far back a late row can trigger a recompute"
+  },
+  {
+    "id": "c9",
+    "headingPath": ["Lifecycle rules (cross-cutting)"],
+    "span": "the earliest-installed remaining sensor becomes the reference",
+    "note": "Earliest-installed is arbitrary; consider the longest calibration history instead"
+  },
+  {
+    "id": "c10",
+    "headingPath": ["Verification"],
+    "span": "a batch can't be ingested twice",
+    "note": "Add the exact file this check uses to testdata/"
+  },
+  {
+    "id": "c11",
+    "headingPath": [
+      "Phase 2 — Storage layer (repositories + jobs)",
+      "Jobs (all writes go through here, per CONTRIBUTING.md — including rollup persistence)"
+    ],
+    "span": "replaces the non-atomic delete-then-insert",
+    "note": "Nice — this closes the half-written-hour race"
+  },
+  {
+    "id": "c12",
+    "headingPath": ["Environment variables"],
+    "span": "the decoder reads raw, rollup reads hourly",
+    "note": "Spell out which tables each role may write"
+  },
+  {
+    "id": "s1",
+    "headingPath": [
+      "Station Data: Calibrated Readings, Rollups, and Retention",
+      "Design decisions (settled — not open questions)"
+    ],
+    "span": "",
+    "note": "SECTION: renumbering these on every edit is painful — consider stable ids"
+  },
+  {
+    "id": "s2",
+    "headingPath": ["Phase 1 — Schema", "1b. Sensors and channels"],
+    "span": "",
+    "note": "SECTION: should channels be their own phase?"
+  },
+  {
+    "id": "s3",
+    "headingPath": ["Phase 4 — Batches: the ingest attribution model"],
+    "span": "",
+    "note": "SECTION: 'batch' will collide with the console's bulk-edit batches — rename later"
+  },
+  {
+    "id": "s4",
+    "headingPath": ["Verification"],
+    "span": "",
+    "note": "SECTION: add an owner per check"
+  },
+  {
+    "id": "s5",
+    "headingPath": [
+      "Station Data: Calibrated Readings, Rollups, and Retention",
+      "Deferred (tracked, out of scope for v1)"
+    ],
+    "span": "",
+    "note": "SECTION: prune this list before circulating"
+  }
+]

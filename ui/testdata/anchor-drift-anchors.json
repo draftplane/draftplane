@@ -1,0 +1,42 @@
+[
+  {
+    "id": "l_fixture_1",
+    "headingPath": [
+      "Missing and unreadable plan files",
+      "The panels, verbatim"
+    ],
+    "span": "The file this plan follows is gone. ~/plans/auth-redesign.md Draftplane still has the plan, its comment threads and the version it last registered -- that is what is behind this panel. f to point this plan at a different file o to keep it in Draftplane with no file d to delete this plan esc to go back to the list",
+    "resolved": true,
+    "comment": "Shorten this to \"Draftplane still has the plan, its comment threads, and the most recent version.\""
+  },
+  {
+    "id": "l_fixture_2",
+    "headingPath": [
+      "Missing and unreadable plan files",
+      "The panels, verbatim"
+    ],
+    "span": "This plan's file is there but could not be read. ~/plans/auth-redesign.md The file is still on disk; only reading it failed. Nothing about the plan or its threads has changed. f to point this plan at a different file r to read the file again once it is readable esc to go back to the list",
+    "resolved": true,
+    "comment": "Cut the last sentence here so the paragraph is just \"The file is still on disk; only reading it failed.\""
+  },
+  {
+    "id": "l_fixture_3",
+    "headingPath": [
+      "Missing and unreadable plan files",
+      "The panels, verbatim"
+    ],
+    "span": "The file this plan follows is gone. ~/plans/auth-redesign.md Draftplane still has the plan, its comment threads and the version it last registered -- that is what is behind this panel. f to point this plan at a different file o to keep it in Draftplane with no file d to delete this plan esc to go back to the list",
+    "resolved": true,
+    "comment": "Say which list: \"esc to go back to the plan list\"."
+  },
+  {
+    "id": "l_fixture_4",
+    "headingPath": [
+      "Missing and unreadable plan files",
+      "The panels, verbatim"
+    ],
+    "span": "This plan's file is there but could not be read. ~/plans/auth-redesign.md The file is still on disk; only reading it failed. Nothing about the plan or its threads has changed. f to point this plan at a different file r to read the file again once it is readable esc to go back to the list",
+    "resolved": true,
+    "comment": "Same here: \"esc to go back to the plan list\", so both panels name the list the same way."
+  }
+]
