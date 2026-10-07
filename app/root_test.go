@@ -940,6 +940,147 @@ func TestRootWaitStateChangeArmsOnlyWithChannel(t *testing.T) {
 	}
 }
 
+// fakeWatch stands in for WatchFile: it records every path armed and stopped,
+// in order, and answers with a channel that is already closed, so a drained wait
+// ends at once instead of blocking on a file nothing writes. A test delivers a
+// change by sending msgSourceChanged itself.
+type fakeWatch struct {
+	armed, stopped []string
+	err            error
+}
+
+func (w *fakeWatch) watch(path string) (<-chan struct{}, func(), error) {
+	if w.err != nil {
+		return nil, nil, w.err
+	}
+	w.armed = append(w.armed, path)
+	ch := make(chan struct{})
+	close(ch)
+	return ch, func() { w.stopped = append(w.stopped, path) }, nil
+}
+
+// TestRootFollowsTheActiveReviewsFile pins which file Root watches across a
+// program's life: nothing on the list, the plan's file once a review on it
+// opens, nothing again once it closes, and nothing for a review that opened as
+// a snapshot because its file is gone.
+func TestRootFollowsTheActiveReviewsFile(t *testing.T) {
+	f := newListFixture(t)
+	dir := filepath.Dir(f.path)
+	s := seedListPlan(t, f, dir, "plan.md", "Rate Limiter", "# Rate Limiter\n\nBody of the plan.\n")
+
+	w := &fakeWatch{}
+	r := NewRoot(f.svc, keymap.Default(), nil, "", nil)
+	r.SetWatchFile(w.watch)
+	r = drainRoot(t, r, r.Init())
+	if len(w.armed) != 0 {
+		t.Fatalf("armed = %v on the list, want nothing", w.armed)
+	}
+
+	r = openViaEnter(t, r)
+	if !slices.Equal(w.armed, []string{s.Path}) {
+		t.Fatalf("armed = %v, want the opened plan's file %q", w.armed, s.Path)
+	}
+
+	r = closeViaQuit(t, r)
+	if !slices.Equal(w.stopped, []string{s.Path}) {
+		t.Fatalf("stopped = %v, want the file the closed review followed", w.stopped)
+	}
+
+	if err := os.Remove(s.Path); err != nil {
+		t.Fatal(err)
+	}
+	r = openViaEnter(t, r)
+	if !r.review.sess.FromSnapshot() {
+		t.Fatal("test setup: a gone file must open as a snapshot")
+	}
+	if len(w.armed) != 1 {
+		t.Fatalf("armed = %v, want no watch for a snapshot review", w.armed)
+	}
+}
+
+// TestRootInReviewFollowsFromInit: `draftplane review <path>` starts Root on a
+// review, and the watch is armed at Init rather than waiting for a first message.
+func TestRootInReviewFollowsFromInit(t *testing.T) {
+	f := setup(t)
+	s, err := session.Open(f.ctx, f.svc, f.path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := &fakeWatch{}
+	r := NewRootInReview(f.svc, keymap.Default(), nil, "", nil, s)
+	r.SetWatchFile(w.watch)
+	r.Init()
+	if !slices.Equal(w.armed, []string{f.path}) {
+		t.Fatalf("armed = %v, want %q", w.armed, f.path)
+	}
+}
+
+// TestRootDeliversSourceChangesToTheReview: a signal from the current watch
+// reaches the review, which re-reads its file; one stamped by a watch Root has
+// since replaced is dropped.
+func TestRootDeliversSourceChangesToTheReview(t *testing.T) {
+	f := newListFixture(t)
+	dir := filepath.Dir(f.path)
+	s := seedListPlan(t, f, dir, "plan.md", "Rate Limiter", "# Rate Limiter\n\nBody of the plan.\n")
+
+	w := &fakeWatch{}
+	r := NewRoot(f.svc, keymap.Default(), nil, "", nil)
+	r.SetWatchFile(w.watch)
+	r = drainRoot(t, r, r.Init())
+	r = openViaEnter(t, r)
+
+	if err := os.WriteFile(s.Path, []byte("# Rate Limiter\n\nRewritten by the agent.\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rewritten := func() bool { return strings.Contains(string(r.review.sess.Content), "Rewritten by the agent") }
+
+	cur, _ := r.Update(msgSourceChanged{seq: r.followSeq - 1})
+	r = cur.(*Root)
+	if rewritten() {
+		t.Fatal("a signal from a replaced watch must be dropped")
+	}
+
+	cur, _ = r.Update(msgSourceChanged{seq: r.followSeq})
+	r = cur.(*Root)
+	if !rewritten() {
+		t.Fatal("a signal from the current watch must reach the review")
+	}
+}
+
+// TestRootSaysWhenItCannotFollow: a watch that will not arm (on macOS, most
+// likely the open-files limit -- kqueue holds one per file in the directory)
+// leaves the review on ctrl+r, and the status line says so.
+func TestRootSaysWhenItCannotFollow(t *testing.T) {
+	f := newListFixture(t)
+	dir := filepath.Dir(f.path)
+	seedListPlan(t, f, dir, "plan.md", "Rate Limiter", "# Rate Limiter\n\nBody of the plan.\n")
+
+	w := &fakeWatch{err: errors.New("too many open files")}
+	r := NewRoot(f.svc, keymap.Default(), nil, "", nil)
+	r.SetWatchFile(w.watch)
+	r = drainRoot(t, r, r.Init())
+	r = openViaEnter(t, r)
+
+	if want := "not following file changes: too many open files"; r.review.status != want {
+		t.Fatalf("status = %q, want %q", r.review.status, want)
+	}
+}
+
+// TestWaitSourceChangeCmd: a signal on the channel answers msgSourceChanged
+// stamped with the watch's seq; a closed channel (a stopped watch) answers no
+// message at all.
+func TestWaitSourceChangeCmd(t *testing.T) {
+	ch := make(chan struct{}, 1)
+	ch <- struct{}{}
+	if msg := waitSourceChangeCmd(ch, 7)(); msg != (msgSourceChanged{seq: 7}) {
+		t.Fatalf("msg = %#v, want msgSourceChanged{seq: 7}", msg)
+	}
+	close(ch)
+	if msg := waitSourceChangeCmd(ch, 7)(); msg != nil {
+		t.Fatalf("msg = %#v, want nil once the channel is closed", msg)
+	}
+}
+
 // TestRootReplaysWindowSize pins the resize-then-switch contract: a resize
 // while the list is active must be replayed onto the review model when it
 // becomes active, since Root only forwards WindowSizeMsg to whichever child

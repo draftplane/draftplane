@@ -914,8 +914,6 @@ type msgStateChanged struct{}
 // changed on disk. Root sends it, stamped with the follow watch's seq so a
 // signal from a watch Root has since replaced is dropped there (Root.syncFollow);
 // the review itself ignores seq.
-//
-//nolint:unused // nothing in this package writes seq yet; Root will
 type msgSourceChanged struct{ seq uint64 }
 
 func (m *Model) viewHeight() int {

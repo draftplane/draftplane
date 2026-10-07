@@ -46,6 +46,18 @@ type Root struct {
 
 	stateChanged <-chan struct{}
 
+	// watchFile arms a watch on the file a review follows (app.WatchFile, from
+	// cmd/draftplane); nil turns following off, which is every Root no caller
+	// gave one. followedPath is the file it is armed on, "" for none;
+	// followCh and followStop are that watch's channel and stop. followSeq
+	// stamps each re-point so a signal from a watch syncFollow has since
+	// replaced is dropped -- openSeq's discipline.
+	watchFile    func(path string) (<-chan struct{}, func(), error)
+	followedPath string
+	followCh     <-chan struct{}
+	followStop   func()
+	followSeq    uint64
+
 	// lastSize is the most recent tea.WindowSizeMsg Root has seen; haveSize is
 	// false until the first one arrives. On every switch, the incoming child is
 	// replayed lastSize before it's rendered -- WindowSizeMsg otherwise only
@@ -85,6 +97,13 @@ func (r *Root) SetRecents(path string) {
 	if r.review != nil {
 		r.review.recentPath = path
 	}
+}
+
+// SetWatchFile turns following on: whenever a review is active on a plan file,
+// Root watches that file with watch and the review re-reads it as it changes.
+// Call it before the program runs.
+func (r *Root) SetWatchFile(watch func(path string) (<-chan struct{}, func(), error)) {
+	r.watchFile = watch
 }
 
 // NewRootInReview builds Root with a review already active -- `draftplane review
@@ -149,6 +168,7 @@ func (r *Root) Init() tea.Cmd {
 	if wait := r.waitStateChange(); wait != nil {
 		cmds = append(cmds, wait)
 	}
+	cmds = append(cmds, r.syncFollow())
 	return tea.Batch(cmds...)
 }
 
@@ -158,6 +178,54 @@ func (r *Root) Init() tea.Cmd {
 // copy that reads the real watch. Shares waitStateChangeCmd with Model's.
 func (r *Root) waitStateChange() tea.Cmd {
 	return waitStateChangeCmd(r.stateChanged)
+}
+
+// syncFollow points the follow watch at the file the active review follows, or
+// at nothing, and answers the wait for the new watch's first signal. It runs
+// after every message (Update) rather than at each door that changes the review
+// -- open, close, ctrl+r, accept, re-point, release -- because the doors are many
+// and the question is one: which file should be watched now?
+//
+// A watch that will not arm is not retried, since followedPath still moves; the
+// review says why it will not follow, and ctrl+r still reloads.
+func (r *Root) syncFollow() tea.Cmd {
+	if r.watchFile == nil {
+		return nil
+	}
+	want := ""
+	if r.inReview {
+		want = r.review.followPath()
+	}
+	if want == r.followedPath {
+		return nil
+	}
+	if r.followStop != nil {
+		r.followStop()
+	}
+	r.followSeq++
+	r.followedPath, r.followCh, r.followStop = want, nil, nil
+	if want == "" {
+		return nil
+	}
+	ch, stop, err := r.watchFile(want)
+	if err != nil {
+		r.review.status = "not following file changes: " + err.Error()
+		return nil
+	}
+	r.followCh, r.followStop = ch, stop
+	return waitSourceChangeCmd(ch, r.followSeq)
+}
+
+// waitSourceChangeCmd is waitStateChangeCmd for the follow watch: the next
+// signal on ch as msgSourceChanged stamped with seq, or no message once ch
+// closes (syncFollow stopped that watch).
+func waitSourceChangeCmd(ch <-chan struct{}, seq uint64) tea.Cmd {
+	return func() tea.Msg {
+		if _, ok := <-ch; ok {
+			return msgSourceChanged{seq: seq}
+		}
+		return nil
+	}
 }
 
 // updateActive dispatches msg to whichever child is currently active,
@@ -173,7 +241,14 @@ func (r *Root) updateActive(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
+// Update is update plus syncFollow, so the follow watch is re-pointed after
+// every message that could have changed what the active review follows.
 func (r *Root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	model, cmd := r.update(msg)
+	return model, tea.Batch(cmd, r.syncFollow())
+}
+
+func (r *Root) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		r.lastSize = msg
@@ -205,6 +280,13 @@ func (r *Root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// that reaches it), then re-arm Root's own wait regardless of what the
 		// child returned, so a later change is never missed.
 		return r, tea.Batch(r.updateActive(msg), r.waitStateChange())
+	case msgSourceChanged:
+		// A signal from a watch syncFollow has since replaced: dropped, and its
+		// wait not re-armed -- the current watch has its own.
+		if msg.seq != r.followSeq {
+			return r, nil
+		}
+		return r, tea.Batch(r.updateActive(msg), waitSourceChangeCmd(r.followCh, r.followSeq))
 	default:
 		return r, r.updateActive(msg)
 	}
