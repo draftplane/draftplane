@@ -27,6 +27,7 @@ import (
 	"github.com/draftplane/draftplane/store/localcas"
 	"github.com/draftplane/draftplane/theme"
 	"github.com/draftplane/draftplane/ui"
+	"github.com/fsnotify/fsnotify"
 )
 
 const testDoc = `# Rate Limiter Plan
@@ -4009,6 +4010,79 @@ func TestWatchState(t *testing.T) {
 		case <-deadline:
 			t.Fatal("channel did not close within 2s of stop")
 		}
+	}
+}
+
+// TestWatchEventMatches pins which events at the followed file's name signal:
+// the ways a save ends (Write, Create) and never the ways a file leaves
+// (Rename, Remove) or only changes mode (Chmod, which macOS sends beside every
+// in-place write). Another file's events never signal.
+func TestWatchEventMatches(t *testing.T) {
+	tests := []struct {
+		name string
+		ev   fsnotify.Event
+		want bool
+	}{
+		{"written in place", fsnotify.Event{Name: "/d/plan.md", Op: fsnotify.Write}, true},
+		{"created at the name", fsnotify.Event{Name: "/d/plan.md", Op: fsnotify.Create}, true},
+		{"renamed away", fsnotify.Event{Name: "/d/plan.md", Op: fsnotify.Rename}, false},
+		{"removed", fsnotify.Event{Name: "/d/plan.md", Op: fsnotify.Remove}, false},
+		{"mode changed", fsnotify.Event{Name: "/d/plan.md", Op: fsnotify.Chmod}, false},
+		{"another file", fsnotify.Event{Name: "/d/other.md", Op: fsnotify.Write}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := watchEventMatches(tt.ev, "plan.md", fileWatchOps); got != tt.want {
+				t.Fatalf("watchEventMatches(%v) = %v, want %v", tt.ev, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestWatchFile drives WatchFile against the real filesystem with the two ways
+// a plan's bytes are replaced: written in place, and a new file renamed over it
+// (how editors and agents commonly save). Each must signal. Stop's contract is
+// TestWatchState's: both go through the same loop. The bounded select is an
+// event wait on a real watcher, not a sleep.
+func TestWatchFile(t *testing.T) {
+	tests := []struct {
+		name string
+		save func(t *testing.T, path string)
+	}{
+		{"written in place", func(t *testing.T, path string) {
+			if err := os.WriteFile(path, []byte("# v1\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{"renamed over", func(t *testing.T, path string) {
+			tmp := path + ".tmp"
+			if err := os.WriteFile(tmp, []byte("# v1\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Rename(tmp, path); err != nil {
+				t.Fatal(err)
+			}
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "plan.md")
+			if err := os.WriteFile(path, []byte("# v0\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			ch, stop, err := WatchFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer stop()
+
+			tt.save(t, path)
+			select {
+			case <-ch:
+			case <-time.After(2 * time.Second):
+				t.Fatal("no signal within 2s of saving the followed file")
+			}
+		})
 	}
 }
 
