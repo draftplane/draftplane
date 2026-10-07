@@ -1874,8 +1874,10 @@ func (m *Model) maybeApplyPendingFollow(join bool) {
 	if fresh.Hash == m.sess.Hash {
 		return
 	}
+	prev := m.sess
 	m.sess = fresh
 	if err := m.RefreshFromSession(attributedCtx()); err != nil {
+		m.sess = prev
 		m.status = "error: " + err.Error()
 		return
 	}

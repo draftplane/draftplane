@@ -944,12 +944,19 @@ func TestRootWaitStateChangeArmsOnlyWithChannel(t *testing.T) {
 // in order, and answers with a channel that is already closed, so a drained wait
 // ends at once instead of blocking on a file nothing writes. A test delivers a
 // change by sending msgSourceChanged itself.
+//
+// attempts counts every call, including the error path, which armed and
+// stopped do not record at all: it is what TestRootSaysWhenItCannotFollow
+// reads to pin syncFollow's own promise that a watch which will not arm is
+// never retried.
 type fakeWatch struct {
 	armed, stopped []string
+	attempts       int
 	err            error
 }
 
 func (w *fakeWatch) watch(path string) (<-chan struct{}, func(), error) {
+	w.attempts++
 	if w.err != nil {
 		return nil, nil, w.err
 	}
@@ -1049,7 +1056,11 @@ func TestRootDeliversSourceChangesToTheReview(t *testing.T) {
 
 // TestRootSaysWhenItCannotFollow: a watch that will not arm (on macOS, most
 // likely the open-files limit -- kqueue holds one per file in the directory)
-// leaves the review on ctrl+r, and the status line says so.
+// leaves the review on ctrl+r, and the status line says so. A further
+// ordinary message -- here, an unrelated key press -- must not retry the
+// watch or disturb that status: syncFollow's own doc comment promises a watch
+// that will not arm is not retried, since followedPath still moves on the
+// failed attempt.
 func TestRootSaysWhenItCannotFollow(t *testing.T) {
 	f := newListFixture(t)
 	dir := filepath.Dir(f.path)
@@ -1061,8 +1072,18 @@ func TestRootSaysWhenItCannotFollow(t *testing.T) {
 	r = drainRoot(t, r, r.Init())
 	r = openViaEnter(t, r)
 
-	if want := "not following file changes: too many open files"; r.review.status != want {
+	want := "not following file changes: too many open files"
+	if r.review.status != want {
 		t.Fatalf("status = %q, want %q", r.review.status, want)
+	}
+
+	r = pressRoot(r, "j")
+
+	if w.attempts != 1 {
+		t.Fatalf("attempts = %d, want 1: a watch that will not arm must not be retried", w.attempts)
+	}
+	if r.review.status != want {
+		t.Fatalf("status = %q, want %q (unchanged)", r.review.status, want)
 	}
 }
 

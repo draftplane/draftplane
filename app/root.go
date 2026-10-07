@@ -14,7 +14,8 @@ import (
 
 // Root is draftplane's top-level program: the plan list and a review session are
 // one Bubbletea program, not two separate binaries glued together. Root owns
-// the switch between them and the single watcher wait-loop both share —
+// the switch between them, the single watcher wait-loop both share, and the
+// follow watch on the active review's own file, re-pointed by syncFollow —
 // children are always constructed with a nil stateChanged channel (their own
 // waitStateChange is then a permanent no-op), and Root forwards
 // msgStateChanged to whichever child is active, re-arming its own wait after

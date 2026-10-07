@@ -6,8 +6,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-// stateWatchOps are the events at state.json that signal. Rename is kept from
-// the original watch: localfs saves by renaming a temp file over state.json.
+// stateWatchOps are the events at state.json that signal. Rename is carried
+// over unchanged from the original watch.
 const stateWatchOps = fsnotify.Write | fsnotify.Create | fsnotify.Rename
 
 // fileWatchOps are the events at a followed plan file that signal. Every way a

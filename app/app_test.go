@@ -3835,11 +3835,16 @@ func TestStateChangeDeferredWhileInFlight(t *testing.T) {
 
 // TestSourceChangeFollowsTheFileInReadMode: a change to the followed file,
 // arriving while the review is idle in read mode, is re-read at once and
-// installed as ctrl+r installs it -- re-anchored threads and all.
+// installed as ctrl+r installs it -- re-anchored threads and all. The status
+// is seeded non-empty first: the follow lands in the SAME update as the
+// message that set it (join is false here, since nothing else in this
+// update's own path changes status), and the "plan updated" assertion below
+// proves it REPLACES that standing status rather than joining it.
 func TestSourceChangeFollowsTheFileInReadMode(t *testing.T) {
 	f := setup(t)
 	seedThread(t, f, "why fifty?")
 	m := openModel(t, f)
+	m.status = "before"
 
 	if err := os.WriteFile(f.path, []byte(revisedDoc), 0o644); err != nil {
 		t.Fatal(err)
@@ -4037,6 +4042,72 @@ func TestSourceChangeNamesAStoreFault(t *testing.T) {
 	}
 	if m.pendingFollow {
 		t.Fatal("the change must be consumed, not retried on every later message")
+	}
+}
+
+// refreshFailingSvc makes Approvals -- the one PlanService call
+// ApprovedCurrent makes, and so the one call only RefreshFromSession reaches
+// and session.Open's own identity resolution never does -- answer err once
+// fail holds true. The switch lets a test's first open and refresh (the
+// model's construction-time one, which must succeed against this same
+// wrapped svc since the follow reuses m.svcOf()) go through clean, and only
+// the later, follow-triggered refresh fail.
+type refreshFailingSvc struct {
+	client.PlanService
+	fail *bool
+	err  error
+}
+
+func (s refreshFailingSvc) Approvals(ctx context.Context, id domain.PlanID) ([]domain.Approval, error) {
+	if *s.fail {
+		return nil, s.err
+	}
+	return s.PlanService.Approvals(ctx, id)
+}
+
+// TestSourceChangeRefreshFaultKeepsTheDocument pins the fix in
+// maybeApplyPendingFollow: a refresh that fails after session.Open already
+// succeeded must not leave m.sess holding bytes m.blocks and m.views do not
+// show. Before the fix, m.sess was replaced ahead of the refresh, so a
+// comment or approval made right after this error would attach to a hash the
+// reader cannot see on screen; the fix restores the previous session when the
+// refresh fails.
+func TestSourceChangeRefreshFaultKeepsTheDocument(t *testing.T) {
+	f := setup(t)
+	seedThread(t, f, "seed")
+
+	fail := false
+	refreshErr := errors.New("the plan store could not be read")
+	svc := refreshFailingSvc{PlanService: f.svc, fail: &fail, err: refreshErr}
+
+	s, err := session.Open(f.ctx, svc, f.path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := New(s, keymap.Default(), nil, "", nil)
+	if err := m.RefreshFromSession(f.ctx); err != nil {
+		t.Fatal(err)
+	}
+	m.width, m.height = 100, 30
+	m.rerender()
+
+	sess := m.sess
+	if err := os.WriteFile(f.path, []byte(revisedDoc), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	fail = true
+
+	cur, cmd := m.Update(msgSourceChanged{})
+	m = drain(t, cur.(*Model), cmd)
+
+	if m.sess != sess {
+		t.Fatal("a failed refresh must not replace the session")
+	}
+	if !strings.HasPrefix(m.status, "error: ") {
+		t.Fatalf("status = %q, want it to start with %q", m.status, "error: ")
+	}
+	if strings.Contains(m.View().Content, "chosen approach") {
+		t.Fatal("a failed refresh must leave the document showing the old text")
 	}
 }
 
