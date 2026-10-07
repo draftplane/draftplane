@@ -1847,7 +1847,10 @@ func (m *Model) maybeApplyPendingRefresh() {
 // IT IS QUIET WHEN THERE IS NOTHING TO SHOW. A file that will not read leaves the
 // document as it was: a save by rename can leave the name empty for a moment, and
 // the Create that ends the save signals again. ctrl+r stays the door that names a
-// file really gone (Panel 1). Identical bytes change nothing.
+// file really gone (Panel 1). Identical bytes change nothing. A STORE FAULT IS
+// DIFFERENT: an unreadable state.json or a failed ResolvePlan is not the file
+// going quiet, and is named on the status line like any other failed write --
+// session.ErrSourceUnreadable is the one error this seam stays silent for.
 //
 // A new session is installed as handleActionDone installs ctrl+r's, and its
 // refresh subsumes any deferred state change. join is Update's: this message
@@ -1862,7 +1865,13 @@ func (m *Model) maybeApplyPendingFollow(join bool) {
 		return
 	}
 	fresh, err := session.Open(attributedCtx(), m.svcOf(), path)
-	if err != nil || fresh.Hash == m.sess.Hash {
+	if err != nil {
+		if !errors.Is(err, session.ErrSourceUnreadable) {
+			m.status = "error: " + err.Error()
+		}
+		return
+	}
+	if fresh.Hash == m.sess.Hash {
 		return
 	}
 	m.sess = fresh

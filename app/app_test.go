@@ -4009,6 +4009,37 @@ func TestSourceChangeIsQuietWithNothingToShow(t *testing.T) {
 	}
 }
 
+// TestSourceChangeNamesAStoreFault: a store fault met while re-reading the
+// followed file (here, a corrupt state.json failing session.Open's identity
+// half) is not the quiet case above -- it is named on the status line, same as
+// any other failed write, and the session stays the one already on screen.
+func TestSourceChangeNamesAStoreFault(t *testing.T) {
+	f := setup(t)
+	seedThread(t, f, "seed")
+	m := openModel(t, f)
+	sess := m.sess
+
+	if err := os.WriteFile(f.path, []byte(revisedDoc), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	corruptState(t, f)
+	cur, cmd := m.Update(msgSourceChanged{})
+	m = drain(t, cur.(*Model), cmd)
+
+	if m.sess != sess {
+		t.Fatal("a store fault must not replace the session")
+	}
+	if m.mode != modeRead {
+		t.Fatalf("mode = %v, want modeRead (no panel)", m.mode)
+	}
+	if !strings.HasPrefix(m.status, "error: ") {
+		t.Fatalf("status = %q, want it to start with %q", m.status, "error: ")
+	}
+	if m.pendingFollow {
+		t.Fatal("the change must be consumed, not retried on every later message")
+	}
+}
+
 // TestApproveCancelDuringInFlightWriteDoesNotConsumePendingRefresh pins a guard
 // inside maybeApplyPendingRefresh: ActApprove opens the confirm panel without
 // gating on dispatchOK, so its cancel ("n"/"esc") can run while an earlier write

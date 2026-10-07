@@ -915,7 +915,7 @@ type msgStateChanged struct{}
 // signal from a watch Root has since replaced is dropped there (Root.syncFollow);
 // the review itself ignores seq.
 //
-//nolint:unused // seq is written by Root (task 3, draftplane-55); the review reads nothing but the message's arrival
+//nolint:unused // nothing in this package writes seq yet; Root will
 type msgSourceChanged struct{ seq uint64 }
 
 func (m *Model) viewHeight() int {
