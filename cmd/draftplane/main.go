@@ -135,6 +135,7 @@ func runReview(args []string) error {
 	defer stopWatch()
 
 	root := app.NewRootInReview(svc, km, th, pseudonym, ch, s)
+	root.SetWatchFile(app.WatchFile)
 	root.SetRecents(recentPath)
 	_, err = tea.NewProgram(root).Run()
 	return err
@@ -263,6 +264,7 @@ func runList() error {
 	defer stopWatch()
 
 	root := app.NewRoot(svc, km, th, pseudonym, ch)
+	root.SetWatchFile(app.WatchFile)
 	root.SetRecents(recentPath)
 	_, err = tea.NewProgram(root).Run()
 	return err

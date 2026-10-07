@@ -1241,7 +1241,8 @@ const noJumpTargets = "no threads to jump to"
 // IDENTITY, never the bytes), so the slice it rebuilds is block for block the one
 // it replaced and a list held across it stays correct. What renumbers blocks is a
 // SESSION REPLACEMENT -- handleActionDone's `m.sess = msg.reloaded`, from
-// runReload (ctrl+r), runAcceptTip, runRepoint and runRelease. That is why
+// runReload (ctrl+r), runAcceptTip, runRepoint and runRelease, and
+// maybeApplyPendingFollow's, from a followed file's change. That is why
 // TestNAfterAReloadLandsInTheDocumentTheModelNowHas drives ctrl+r rather than
 // RefreshFromSession: a test built on the refresh would pass against a cached
 // list.
@@ -2024,12 +2025,12 @@ func helpLine(km keymap.Map, orphanCount int, search searchState, blockHint stri
 		// repair it). Ruled acceptable because nobody is held to 80 columns and q is
 		// the key a reader reaches for without being told.
 		"shift select",
-		// THE RELOAD GESTURE BELONGS HERE. It is the one key that changes THE
-		// DOCUMENT'S OWN BYTES on screen: WatchState (app/watch.go) watches
-		// state.json, so review facts an agent writes arrive unaided, but it does
-		// not watch the plan file -- an agent that rewrites the PLAN leaves the
-		// reader on stale text with nothing naming the way forward. Recovering
-		// from that is possible only through this key, so the bar has to say it.
+		// THE RELOAD GESTURE BELONGS HERE, though a review on a plan file now
+		// follows it (Root.syncFollow, maybeApplyPendingFollow) and an agent's
+		// rewrite arrives unaided. ctrl+r is still the only way to new bytes for a
+		// snapshot review, which has no file to follow, and for a review whose
+		// watch would not arm; and it is the door that names a file that went
+		// away (Panel 1), which following deliberately does not.
 		//
 		// IT IS A WIDE-TERMINAL SEGMENT TOO, AND THAT IS DISCLOSED RATHER THAN FIXED:
 		// measured, it first appears at the width helpLine's own doc names, so an
