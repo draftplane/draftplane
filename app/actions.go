@@ -1838,6 +1838,49 @@ func (m *Model) maybeApplyPendingRefresh() {
 	}
 }
 
+// maybeApplyPendingFollow re-reads the followed plan file once a change to it is
+// pending and the review is idle in read mode -- the moment the idle
+// msgStateChanged arm treats as safe, for its reasons: compose holds a draft the
+// document must not move under, a panel is mid-question, and an in-flight write's
+// goroutine is still reading the session this would replace.
+//
+// IT IS QUIET WHEN THERE IS NOTHING TO SHOW. A file that will not read leaves the
+// document as it was: a save by rename can leave the name empty for a moment, and
+// the Create that ends the save signals again. ctrl+r stays the door that names a
+// file really gone (Panel 1). Identical bytes change nothing.
+//
+// A new session is installed as handleActionDone installs ctrl+r's, and its
+// refresh subsumes any deferred state change. join is Update's: this message
+// already said something, so the follow's flash is appended to it.
+func (m *Model) maybeApplyPendingFollow(join bool) {
+	if !m.pendingFollow || m.mode != modeRead || m.inFlight {
+		return
+	}
+	m.pendingFollow = false
+	path := m.followPath()
+	if path == "" {
+		return
+	}
+	fresh, err := session.Open(attributedCtx(), m.svcOf(), path)
+	if err != nil || fresh.Hash == m.sess.Hash {
+		return
+	}
+	m.sess = fresh
+	if err := m.RefreshFromSession(attributedCtx()); err != nil {
+		m.status = "error: " + err.Error()
+		return
+	}
+	m.pendingRefresh = false
+	m.expandReanchored()
+	m.rerender()
+	m.ensureVisible()
+	if join && m.status != "" {
+		m.status += " · plan updated"
+	} else {
+		m.status = "plan updated"
+	}
+}
+
 // expandReanchored auto-expands any thread whose placement carries a badge
 // (fuzzy match or moved) so a re-anchor is visible without an extra keypress.
 func (m *Model) expandReanchored() {

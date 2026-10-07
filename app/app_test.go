@@ -41,6 +41,12 @@ Requests are currently unbounded and the database suffers under load spikes.
 We will use a token bucket with a burst capacity of fifty requests.
 `
 
+// revisedDoc is testDoc with its design paragraph rewritten, the edit an agent
+// makes when it answers a thread by changing the plan.
+var revisedDoc = strings.Replace(testDoc,
+	"We will use a token bucket with a burst capacity of fifty requests.",
+	"A token bucket limiter with burst capacity fifty is the chosen approach.", 1)
+
 type fixture struct {
 	svc  client.PlanService
 	cas  *localcas.Store
@@ -2287,10 +2293,7 @@ func TestReloadPicksUpFileChanges(t *testing.T) {
 	seedThread(t, f, "why fifty?")
 	m := openModel(t, f)
 
-	revised := strings.Replace(testDoc,
-		"We will use a token bucket with a burst capacity of fifty requests.",
-		"A token bucket limiter with burst capacity fifty is the chosen approach.", 1)
-	if err := os.WriteFile(f.path, []byte(revised), 0o644); err != nil {
+	if err := os.WriteFile(f.path, []byte(revisedDoc), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	cur, cmd := m.Update(tea.KeyPressMsg{Code: 'r', Mod: tea.ModCtrl})
@@ -3827,6 +3830,182 @@ func TestStateChangeDeferredWhileInFlight(t *testing.T) {
 	}
 	if m.status != "thread updated" {
 		t.Fatalf("status = %q, want the write's own %q (a deferred refresh must not clobber it)", m.status, "thread updated")
+	}
+}
+
+// TestSourceChangeFollowsTheFileInReadMode: a change to the followed file,
+// arriving while the review is idle in read mode, is re-read at once and
+// installed as ctrl+r installs it -- re-anchored threads and all.
+func TestSourceChangeFollowsTheFileInReadMode(t *testing.T) {
+	f := setup(t)
+	seedThread(t, f, "why fifty?")
+	m := openModel(t, f)
+
+	if err := os.WriteFile(f.path, []byte(revisedDoc), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cur, cmd := m.Update(msgSourceChanged{})
+	m = drain(t, cur.(*Model), cmd)
+
+	view := m.View().Content
+	if !strings.Contains(view, "chosen approach") {
+		t.Fatal("a change to the followed file must re-read it")
+	}
+	if !strings.Contains(view, "fuzzy") {
+		t.Fatal("the re-anchored thread must show its fuzzy badge, as after ctrl+r")
+	}
+	if m.status != "plan updated" {
+		t.Fatalf("status = %q, want %q", m.status, "plan updated")
+	}
+}
+
+// TestSourceChangeWaitsForIdleRead: a change arriving while the review is not
+// idle is held, and lands the moment it is. Compose holds a draft the document
+// must not move under; an in-flight write's goroutine is reading the session a
+// re-read would replace. A follow landing with that write's result joins the
+// write's own words rather than erasing them.
+func TestSourceChangeWaitsForIdleRead(t *testing.T) {
+	tests := []struct {
+		name       string
+		enter      func(t *testing.T, m *Model) (*Model, tea.Cmd)
+		leave      func(t *testing.T, m *Model, held tea.Cmd) *Model
+		wantStatus string
+	}{
+		{
+			name: "compose open",
+			enter: func(t *testing.T, m *Model) (*Model, tea.Cmd) {
+				m = press(m, "j", "j", "c")
+				if m.mode != modeCompose {
+					t.Fatalf("mode = %v, want modeCompose", m.mode)
+				}
+				return m, nil
+			},
+			leave: func(t *testing.T, m *Model, _ tea.Cmd) *Model {
+				return press(m, "esc")
+			},
+			wantStatus: "plan updated",
+		},
+		{
+			name: "write in flight",
+			enter: func(t *testing.T, m *Model) (*Model, tea.Cmd) {
+				m = press(m, "n")
+				cur, held := m.Update(tea.KeyPressMsg{Code: 'R', Text: "R"})
+				m = cur.(*Model)
+				if !m.inFlight {
+					t.Fatal("resolve dispatch must claim inFlight")
+				}
+				return m, held
+			},
+			leave: func(t *testing.T, m *Model, held tea.Cmd) *Model {
+				return drain(t, m, held)
+			},
+			wantStatus: "thread updated · plan updated",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := setup(t)
+			seedThread(t, f, "seed")
+			m, held := tt.enter(t, openModel(t, f))
+
+			if err := os.WriteFile(f.path, []byte(revisedDoc), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			cur, _ := m.Update(msgSourceChanged{})
+			m = cur.(*Model)
+			if !m.pendingFollow {
+				t.Fatal("a change while not idle must be held")
+			}
+			if strings.Contains(string(m.sess.Content), "chosen approach") {
+				t.Fatal("a held change must not be read yet")
+			}
+
+			m = tt.leave(t, m, held)
+			if m.pendingFollow {
+				t.Fatal("the held change must land once the review is idle in read mode")
+			}
+			if !strings.Contains(string(m.sess.Content), "chosen approach") {
+				t.Fatal("the held change must re-read the file")
+			}
+			if m.status != tt.wantStatus {
+				t.Fatalf("status = %q, want %q", m.status, tt.wantStatus)
+			}
+		})
+	}
+}
+
+// openSnapshotModel opens f's plan as its registered version (session.OpenVersion),
+// a review with no file to follow.
+func openSnapshotModel(tb testing.TB, f fixture) *Model {
+	tb.Helper()
+	plan, err := f.svc.ResolvePlan(f.ctx, f.path)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	s, err := session.OpenVersion(f.ctx, f.svc, plan.ID)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	m := New(s, keymap.Default(), nil, "", nil)
+	if err := m.RefreshFromSession(f.ctx); err != nil {
+		tb.Fatal(err)
+	}
+	return m
+}
+
+// TestSourceChangeIsQuietWithNothingToShow: a follow that finds nothing new to
+// show changes nothing on screen. Identical bytes are a touch or a save's
+// second event; a file that will not read may be mid-rename, and the save's
+// Create signals again (ctrl+r is the door that names a file really gone); a
+// snapshot review has no file, and must never become a file review by way of
+// a stray signal.
+func TestSourceChangeIsQuietWithNothingToShow(t *testing.T) {
+	tests := []struct {
+		name   string
+		open   func(testing.TB, fixture) *Model
+		change func(t *testing.T, f fixture)
+	}{
+		{"same bytes", openModel, func(t *testing.T, f fixture) {
+			if err := os.WriteFile(f.path, []byte(testDoc), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{"file gone", openModel, func(t *testing.T, f fixture) {
+			if err := os.Remove(f.path); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{"snapshot review", openSnapshotModel, func(t *testing.T, f fixture) {
+			if err := os.WriteFile(f.path, []byte(revisedDoc), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := setup(t)
+			seedThread(t, f, "seed")
+			m := tt.open(t, f)
+			m.status = "before"
+			sess := m.sess
+
+			tt.change(t, f)
+			cur, cmd := m.Update(msgSourceChanged{})
+			m = drain(t, cur.(*Model), cmd)
+
+			if m.sess != sess {
+				t.Fatal("the session must not be replaced")
+			}
+			if m.mode != modeRead {
+				t.Fatalf("mode = %v, want modeRead (no panel)", m.mode)
+			}
+			if m.status != "before" {
+				t.Fatalf("status = %q, want it untouched", m.status)
+			}
+			if m.pendingFollow {
+				t.Fatal("the change must be consumed, not left to fire later")
+			}
+		})
 	}
 }
 
