@@ -420,6 +420,14 @@ type Model struct {
 	// arrived. maybeApplyPendingFollow consumes it, from Update.
 	pendingFollow bool
 
+	// followedSinceApproval is true once a follow has installed a session the
+	// reader never scrolled through: maybeApplyPendingFollow sets it the moment
+	// its own refresh succeeds, and ActApprove reads it to warn before the y/n
+	// rather than let an approve silently land on bytes the reader has not seen
+	// settle. Cleared only when an approval actually lands (handleActionDone,
+	// fromApprove) -- a declined or cancelled prompt leaves it standing.
+	followedSinceApproval bool
+
 	// embedded is true when this Model is Root's active review child rather than
 	// the standalone `draftplane review <path>` program. It gates quit() alone:
 	// embedded, ActQuit (q) returns to the list via msgCloseReview instead of

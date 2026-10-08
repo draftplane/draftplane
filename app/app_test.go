@@ -4111,6 +4111,47 @@ func TestSourceChangeRefreshFaultKeepsTheDocument(t *testing.T) {
 	}
 }
 
+// TestApprovePromptWarnsAfterAFollow pins the product owner's ruling on the
+// approval gap a follow opened: a or y approving m.sess.Hash after a follow
+// installed it must not be the only sign the bytes moved. The approve prompt
+// says so before the reader answers y, the warning survives a decline (the
+// file is still the one the reader has not caught up with), and it stops
+// once an approval actually lands.
+func TestApprovePromptWarnsAfterAFollow(t *testing.T) {
+	f := setup(t)
+	seedThread(t, f, "seed")
+	m := openModel(t, f)
+
+	if err := os.WriteFile(f.path, []byte(revisedDoc), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cur, cmd := m.Update(msgSourceChanged{})
+	m = drain(t, cur.(*Model), cmd)
+
+	label := planLabel(m.sess.Path, m.sess.Plan.Title)
+	plain := fmt.Sprintf("approve the current state of %s? (y/n)", label)
+	warned := fmt.Sprintf("approve the current state of %s? it was updated from its file while you were reading (y/n)", label)
+
+	m = press(m, "a")
+	if m.confirm != warned {
+		t.Fatalf("confirm = %q, want the warned text %q", m.confirm, warned)
+	}
+
+	m = press(m, "n")
+	m = press(m, "a")
+	if m.confirm != warned {
+		t.Fatalf("confirm after a decline = %q, want it still warned %q", m.confirm, warned)
+	}
+
+	cur, cmd = m.Update(tea.KeyPressMsg{Code: 'y', Text: "y"})
+	m = drain(t, cur.(*Model), cmd)
+
+	m = press(m, "a")
+	if m.confirm != plain {
+		t.Fatalf("confirm once an approval has landed = %q, want the plain text %q", m.confirm, plain)
+	}
+}
+
 // TestApproveCancelDuringInFlightWriteDoesNotConsumePendingRefresh pins a guard
 // inside maybeApplyPendingRefresh: ActApprove opens the confirm panel without
 // gating on dispatchOK, so its cancel ("n"/"esc") can run while an earlier write
