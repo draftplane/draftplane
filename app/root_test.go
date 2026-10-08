@@ -1022,6 +1022,39 @@ func TestRootInReviewFollowsFromInit(t *testing.T) {
 	}
 }
 
+// TestRootSeesASaveBeforeTheWatchArmed closes the gap between a review's own
+// read of its file and the watch that is meant to catch the next change to
+// it: `draftplane review <path>` opens the session -- reading the file --
+// before the program, and so the watch, ever starts. A save landing in that
+// gap raises no signal from the watch, since the watch did not exist yet;
+// syncFollow's forced pendingFollow (set the instant the watch arms) is what
+// catches it instead, at the review's own next idle moment.
+func TestRootSeesASaveBeforeTheWatchArmed(t *testing.T) {
+	f := setup(t)
+	s, err := session.Open(f.ctx, f.svc, f.path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The save in the gap: it lands on disk after the session above already
+	// read the file, and strictly before the watch below ever arms.
+	if err := os.WriteFile(f.path, []byte(revisedDoc), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	w := &fakeWatch{}
+	r := NewRootInReview(f.svc, keymap.Default(), nil, "", nil, s)
+	r.SetWatchFile(w.watch)
+	r.Init()
+
+	cur, _ := r.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+	r = cur.(*Root)
+
+	if !strings.Contains(string(r.review.sess.Content), "chosen approach") {
+		t.Fatal("a save made before the watch armed must still be seen, at the next ordinary message")
+	}
+}
+
 // TestRootDeliversSourceChangesToTheReview: a signal from the current watch
 // reaches the review, which re-reads its file; one stamped by a watch Root has
 // since replaced is dropped.

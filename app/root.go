@@ -214,6 +214,11 @@ func (r *Root) syncFollow() tea.Cmd {
 		return nil
 	}
 	r.followCh, r.followStop = ch, stop
+	// The review already read want once before this watch existed -- at open, or
+	// (for `draftplane review <path>`) before the program even started. A save
+	// landing in that gap raised no signal, so force one re-read now that the
+	// watch is up; identical bytes keep it quiet.
+	r.review.pendingFollow = true
 	return waitSourceChangeCmd(ch, r.followSeq)
 }
 

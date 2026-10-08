@@ -3836,10 +3836,11 @@ func TestStateChangeDeferredWhileInFlight(t *testing.T) {
 // TestSourceChangeFollowsTheFileInReadMode: a change to the followed file,
 // arriving while the review is idle in read mode, is re-read at once and
 // installed as ctrl+r installs it -- re-anchored threads and all. The status
-// is seeded non-empty first: the follow lands in the SAME update as the
-// message that set it (join is false here, since nothing else in this
-// update's own path changes status), and the "plan updated" assertion below
-// proves it REPLACES that standing status rather than joining it.
+// is seeded non-empty first: it is already standing before the
+// msgSourceChanged update runs (join is false here, since nothing else in
+// that update's own path changes status), and the "plan updated" assertion
+// below proves the follow REPLACES that standing status rather than joining
+// it.
 func TestSourceChangeFollowsTheFileInReadMode(t *testing.T) {
 	f := setup(t)
 	seedThread(t, f, "why fifty?")
@@ -4112,11 +4113,12 @@ func TestSourceChangeRefreshFaultKeepsTheDocument(t *testing.T) {
 }
 
 // TestApprovePromptWarnsAfterAFollow pins the product owner's ruling on the
-// approval gap a follow opened: a or y approving m.sess.Hash after a follow
-// installed it must not be the only sign the bytes moved. The approve prompt
-// says so before the reader answers y, the warning survives a decline (the
-// file is still the one the reader has not caught up with), and it stops
-// once an approval actually lands.
+// approval gap a follow opened: a then y approves the current bytes, so the
+// passing "plan updated" flash must not be the only sign that the bytes
+// moved. The approve prompt says so before the reader answers y, the warning
+// survives an unrelated write and a decline alike (the file is still the one
+// the reader has not caught up with), and it stops once an approval actually
+// lands.
 func TestApprovePromptWarnsAfterAFollow(t *testing.T) {
 	f := setup(t)
 	seedThread(t, f, "seed")
@@ -4131,6 +4133,20 @@ func TestApprovePromptWarnsAfterAFollow(t *testing.T) {
 	label := planLabel(m.sess.Path, m.sess.Plan.Title)
 	plain := fmt.Sprintf("approve the current state of %s? (y/n)", label)
 	warned := fmt.Sprintf("approve the current state of %s? it was updated from its file while you were reading (y/n)", label)
+
+	// An unrelated write that SUCCEEDS must not clear the warning either --
+	// only an approval landing does. Resolving the seeded thread is a plain
+	// write with no confirm panel of its own (dispatchWrite's ActToggleResolve
+	// arm), so it exercises exactly that without an approve anywhere near it.
+	m = press(m, "n")
+	cur, held := m.Update(tea.KeyPressMsg{Code: 'R', Text: "R"})
+	m = drain(t, cur.(*Model), held)
+
+	m = press(m, "a")
+	if m.confirm != warned {
+		t.Fatalf("confirm after an unrelated resolve = %q, want it still warned %q", m.confirm, warned)
+	}
+	m = press(m, "esc")
 
 	m = press(m, "a")
 	if m.confirm != warned {
