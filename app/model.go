@@ -415,6 +415,19 @@ type Model struct {
 	// maybeApplyPendingRefresh consumes it at the next safe seam.
 	pendingRefresh bool
 
+	// pendingFollow is true when the followed plan file changed and the review
+	// has not re-read it yet: it was not idle in read mode when the change
+	// arrived. maybeApplyPendingFollow consumes it, from Update.
+	pendingFollow bool
+
+	// followedSinceApproval is true once a follow has installed a session the
+	// reader never scrolled through: maybeApplyPendingFollow sets it the moment
+	// its own refresh succeeds, and ActApprove reads it to warn before the y/n
+	// rather than let an approve silently land on bytes the reader has not seen
+	// settle. Cleared only when an approval actually lands (handleActionDone,
+	// fromApprove) -- a declined or cancelled prompt leaves it standing.
+	followedSinceApproval bool
+
 	// embedded is true when this Model is Root's active review child rather than
 	// the standalone `draftplane review <path>` program. It gates quit() alone:
 	// embedded, ActQuit (q) returns to the list via msgCloseReview instead of
@@ -905,6 +918,12 @@ func waitStateChangeCmd(ch <-chan struct{}) tea.Cmd {
 // delivered at most as fast as the loop can re-arm waitStateChange.
 type msgStateChanged struct{}
 
+// msgSourceChanged signals that the plan file the active review follows
+// changed on disk. Root sends it, stamped with the follow watch's seq so a
+// signal from a watch Root has since replaced is dropped there (Root.syncFollow);
+// the review itself ignores seq.
+type msgSourceChanged struct{ seq uint64 }
+
 func (m *Model) viewHeight() int {
 	// -3: the status and help rows, and the row of ground above the document.
 	// That top row is a real row of the altscreen, so a budget that does not
@@ -1230,7 +1249,8 @@ const noJumpTargets = "no threads to jump to"
 // IDENTITY, never the bytes), so the slice it rebuilds is block for block the one
 // it replaced and a list held across it stays correct. What renumbers blocks is a
 // SESSION REPLACEMENT -- handleActionDone's `m.sess = msg.reloaded`, from
-// runReload (ctrl+r), runAcceptTip, runRepoint and runRelease. That is why
+// runReload (ctrl+r), runAcceptTip, runRepoint and runRelease, and
+// maybeApplyPendingFollow's, from a followed file's change. That is why
 // TestNAfterAReloadLandsInTheDocumentTheModelNowHas drives ctrl+r rather than
 // RefreshFromSession: a test built on the refresh would pass against a cached
 // list.
@@ -1337,7 +1357,28 @@ func (m *Model) seekMatch(dir int, includeCursor bool) {
 
 func (m *Model) CursorBlock() int { return m.cursor }
 
+// Update is update plus the one seam a followed file's change lands at: the
+// first moment a message leaves the review idle in read mode. A follow landing
+// in the same update as another result -- a comment posted while an agent
+// rewrote the plan -- joins that result's words instead of erasing them, so
+// what the status said before this message is passed along.
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	said := m.status
+	model, cmd := m.update(msg)
+	m.maybeApplyPendingFollow(m.status != said)
+	return model, cmd
+}
+
+// followPath is the file this review follows, or "" for none: a snapshot
+// session (OpenVersion, OpenSupplied) has no working copy on disk.
+func (m *Model) followPath() string {
+	if m.sess.FromSnapshot() {
+		return ""
+	}
+	return m.sess.Path
+}
+
+func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -1397,6 +1438,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.pendingRefresh = true
 		}
 		return m, m.waitStateChange()
+	case msgSourceChanged:
+		// Held, never read here: Update's maybeApplyPendingFollow reads it now if
+		// the review is idle in read mode, or at the first message that leaves it so.
+		m.pendingFollow = true
+		return m, nil
 	case msgActionDone:
 		return m.handleActionDone(msg)
 	case editorDoneMsg:
@@ -1987,12 +2033,12 @@ func helpLine(km keymap.Map, orphanCount int, search searchState, blockHint stri
 		// repair it). Ruled acceptable because nobody is held to 80 columns and q is
 		// the key a reader reaches for without being told.
 		"shift select",
-		// THE RELOAD GESTURE BELONGS HERE. It is the one key that changes THE
-		// DOCUMENT'S OWN BYTES on screen: WatchState (app/watch.go) watches
-		// state.json, so review facts an agent writes arrive unaided, but it does
-		// not watch the plan file -- an agent that rewrites the PLAN leaves the
-		// reader on stale text with nothing naming the way forward. Recovering
-		// from that is possible only through this key, so the bar has to say it.
+		// THE RELOAD GESTURE BELONGS HERE, though a review on a plan file now
+		// follows it (Root.syncFollow, maybeApplyPendingFollow) and an agent's
+		// rewrite arrives unaided. ctrl+r is still the only way to new bytes for a
+		// snapshot review, which has no file to follow, and for a review whose
+		// watch would not arm; and it is the door that names a file that went
+		// away (Panel 1), which following deliberately does not.
 		//
 		// IT IS A WIDE-TERMINAL SEGMENT TOO, AND THAT IS DISCLOSED RATHER THAN FIXED:
 		// measured, it first appears at the width helpLine's own doc names, so an

@@ -86,6 +86,16 @@ type msgActionDone struct {
 	// modeConflict's decline handler.
 	retryExpand int
 
+	// fromApprove is true only for an approve write dispatched straight from the
+	// confirm prompt's y arm (runApproveAction), gating handleActionDone's clear
+	// of m.followedSinceApproval to that one door. It is deliberately NOT set for
+	// the identical write re-dispatched by modeConflict's decline (msg.retry,
+	// run back through the generic runAction): an approval that only succeeds
+	// through that retry leaves the warning standing for the next prompt, which
+	// errs toward warning rather than toward silently clearing it on a write
+	// that conflicted at least once.
+	fromApprove bool
+
 	// fromRepoint is true for a re-point's result (runRepoint) AND for a release's
 	// (runRelease) -- both write the plan's SourceHint through the identical
 	// client.SetSourceHint call, one instant apart from a re-open through
@@ -197,7 +207,12 @@ func (m *Model) dispatchWrite(action keymap.Action) (tea.Model, tea.Cmd) {
 		})
 	case keymap.ActApprove:
 		m.mode = modeConfirmApprove
-		m.confirm = fmt.Sprintf("approve the current state of %s? (y/n)", planLabel(m.sess.Path, m.sess.Plan.Title))
+		label := planLabel(m.sess.Path, m.sess.Plan.Title)
+		if m.followedSinceApproval {
+			m.confirm = fmt.Sprintf("approve the current state of %s? it was updated from its file while you were reading (y/n)", label)
+		} else {
+			m.confirm = fmt.Sprintf("approve the current state of %s? (y/n)", label)
+		}
 	case keymap.ActReload:
 		if !m.dispatchOK() {
 			return m, nil
@@ -810,6 +825,22 @@ func (m *Model) runRelocateAction(nextTID domain.ThreadID, fn func(context.Conte
 	}
 }
 
+// runApproveAction is runAction's approve-mode counterpart: the identical
+// message runAction(-1, fn) builds, plus fromApprove, so handleActionDone can
+// clear m.followedSinceApproval once this write -- and only this write, never
+// its conflict retry -- actually lands. retry is still fn, same as
+// runAction's, since an approve write can conflict too.
+func (m *Model) runApproveAction(fn func(context.Context) (string, error)) tea.Cmd {
+	ctx := attributedCtx()
+	return func() tea.Msg {
+		status, err := fn(ctx)
+		return msgActionDone{
+			status: status, err: err, expandBlock: -1,
+			retry: fn, retryExpand: -1, fromApprove: true,
+		}
+	}
+}
+
 // runComposeAction is runAction for the one write that CREATES the thread the
 // model must then aim at: fn reports the new thread's id alongside the status, and
 // handleActionDone selects it on expandBlock.
@@ -1284,7 +1315,7 @@ func (m *Model) updatePanel(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				}
 				return fmt.Sprintf("review saved for %s (%s)", planLabel(sess.Path, sess.Plan.Title), sess.Hash.Short()), nil
 			}
-			return m, m.runAction(-1, fn)
+			return m, m.runApproveAction(fn)
 		case "n", "esc":
 			m.mode = modeRead
 			m.maybeApplyPendingRefresh()
@@ -1733,6 +1764,12 @@ func (m *Model) handleActionDone(msg msgActionDone) (tea.Model, tea.Cmd) {
 	}
 	m.pendingRetry = nil
 	m.status = msg.status
+	// An approval just landed, straight from the prompt rather than through a
+	// conflict's own retry (fromApprove's own doc comment) -- the warning it
+	// answered no longer applies to what is now on screen.
+	if msg.fromApprove {
+		m.followedSinceApproval = false
+	}
 	// THE PLAN IS GONE, SO THE REVIEW IS OVER -- and this returns before the refresh
 	// below, because that refresh reads the plan's placements and approvals and
 	// there is no plan left to read them from: it would fail and paint a read error
@@ -1835,6 +1872,63 @@ func (m *Model) maybeApplyPendingRefresh() {
 	if after := m.factsFingerprint(); after != before {
 		m.status = "review updated"
 		m.ensureVisible()
+	}
+}
+
+// maybeApplyPendingFollow re-reads the followed plan file once a change to it is
+// pending and the review is idle in read mode -- the moment the idle
+// msgStateChanged arm treats as safe, for its reasons: compose holds a draft the
+// document must not move under, a panel is mid-question, and an in-flight write's
+// goroutine is still reading the session this would replace.
+//
+// IT IS QUIET WHEN THERE IS NOTHING TO SHOW. A file that will not read leaves the
+// document as it was: a save by rename can leave the name empty for a moment, and
+// the Create that ends the save signals again. ctrl+r stays the door that names a
+// file really gone (Panel 1). Identical bytes change nothing. A STORE FAULT IS
+// DIFFERENT: an unreadable state.json or a failed ResolvePlan is not the file
+// going quiet, and is named on the status line like any other failed write --
+// session.ErrSourceUnreadable is the one error this seam stays silent for.
+//
+// A new session is installed as handleActionDone installs ctrl+r's, and its
+// refresh subsumes any deferred state change. join is Update's: this message
+// already said something, so the follow's flash is appended to it.
+func (m *Model) maybeApplyPendingFollow(join bool) {
+	if !m.pendingFollow || m.mode != modeRead || m.inFlight {
+		return
+	}
+	m.pendingFollow = false
+	path := m.followPath()
+	if path == "" {
+		return
+	}
+	fresh, err := session.Open(attributedCtx(), m.svcOf(), path)
+	if err != nil {
+		if !errors.Is(err, session.ErrSourceUnreadable) {
+			m.status = "error: " + err.Error()
+		}
+		return
+	}
+	if fresh.Hash == m.sess.Hash {
+		return
+	}
+	prev := m.sess
+	m.sess = fresh
+	if err := m.RefreshFromSession(attributedCtx()); err != nil {
+		m.sess = prev
+		m.status = "error: " + err.Error()
+		return
+	}
+	// A new session is now on screen that the reader never scrolled through --
+	// ActApprove's warning until an approval lands.
+	m.followedSinceApproval = true
+	m.pendingRefresh = false
+	m.expandReanchored()
+	m.rerender()
+	m.ensureVisible()
+	if join && m.status != "" {
+		m.status += " · plan updated"
+	} else {
+		m.status = "plan updated"
 	}
 }
 
