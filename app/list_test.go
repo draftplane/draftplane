@@ -6191,7 +6191,7 @@ func TestListMastheadAndCursorBandCarryBrand(t *testing.T) {
 // Accent" while destroying the distinction the ink was spent on.
 //
 // IT DRIVES EVERY PRESET, because the ink is the claim and Accent is a
-// different hue in each -- gold on dark, mauve on light, slate on quartz. A
+// different hue in each -- gold on dark, mauve on light and quartz. A
 // dark-only check cannot see a light preset whose section name went somewhere
 // else.
 func TestListSectionAndLabelsPartCompany(t *testing.T) {

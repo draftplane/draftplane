@@ -40,9 +40,9 @@ type Theme struct {
 	//
 	// The presets assign the roles differently, deliberately: dark spends rose
 	// on identity and position and bronze on state, light a cerulean on
-	// identity and a rose on state, and quartz one raspberry on both, leaving
-	// slate for the thread card's author line. A role is a role in every
-	// preset; which hue fills it is a question about the ground it sits on.
+	// identity and a rose on state, and quartz one raspberry on both. A role is
+	// a role in every preset; which hue fills it is a question about the ground
+	// it sits on.
 	//
 	// In the dark and quartz presets it holds the SAME VALUE as Brand, and the
 	// two stay separate tokens: collapsing them would silently move every
@@ -56,10 +56,10 @@ type Theme struct {
 	//
 	// It is a role of its own because no other token is rose in EVERY preset:
 	// it is Heading/Brand in dark and quartz and Accent in light. Dark's
-	// Heading, Brand and Warn happen to hold the identical value today, and
-	// quartz's PanelHead joins them; that is a fact about today's values, not a
-	// promise, and sharing a token would drag this headline's colour along the
-	// next time one of them is retuned.
+	// Heading, Brand and Warn happen to hold the identical value today, and in
+	// quartz PanelHead and Accent hold it too; that is a fact about today's
+	// values, not a promise, and sharing a token would drag this headline's
+	// colour along the next time one of them is retuned.
 	Warn string
 	// PanelHead is the ink of A PANEL'S LEADING LINE -- the line naming what the
 	// panel is about to do. The compose panel's "comment on:", every confirm
@@ -214,7 +214,7 @@ var presets = map[string]*Theme{
 		Field:      "#e3e8ee",
 		Control:    "#e3e8ee",
 		Card:       "#f3f6f9",
-		Accent:     "#3a4250",
+		Accent:     "#a8386c",
 		Strip:      "#f3f6f9",
 		Focus:      "#a8386c",
 		StatusBar:  "#e3e8ee",

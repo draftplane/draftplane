@@ -1353,8 +1353,8 @@ func (m *ListModel) renderBodyRowPainted(r row, isCursor bool) string {
 		// Accent is the ink because the client already spends it on a heading a
 		// reader is meant to find (theme.PanelHead holds its dark hex for the
 		// panel headlines), and it is the one standing role that answers a
-		// legible colour in EVERY preset -- gold on dark, mauve on light, slate
-		// on quartz.
+		// legible colour in EVERY preset -- gold on dark, mauve on light and
+		// quartz.
 		textStyle = z.accent.Bold(true)
 	}
 	inner := max(rowWidth-listBandWidth, 0)

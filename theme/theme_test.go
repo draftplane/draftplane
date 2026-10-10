@@ -192,9 +192,9 @@ func TestDefaultPathFallsBackToHome(t *testing.T) {
 	}
 }
 
-// relLuminance and contrastRatio are WCAG's, used here only to ask whether
-// two surfaces differ enough to be seen as two surfaces.
-func relLuminance(t *testing.T, hex string) float64 {
+// linearRGB decodes a hex colour into linear-light sRGB channels, the common
+// first step of relLuminance and cieLab.
+func linearRGB(t *testing.T, hex string) [3]float64 {
 	t.Helper()
 	var c [3]float64
 	for i := 0; i < 3; i++ {
@@ -209,6 +209,14 @@ func relLuminance(t *testing.T, hex string) float64 {
 			c[i] = math.Pow((f+0.055)/1.055, 2.4)
 		}
 	}
+	return c
+}
+
+// relLuminance and contrastRatio are WCAG's, used here only to ask whether
+// two surfaces differ enough to be seen as two surfaces.
+func relLuminance(t *testing.T, hex string) float64 {
+	t.Helper()
+	c := linearRGB(t, hex)
 	return 0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2]
 }
 
@@ -216,6 +224,34 @@ func contrastRatio(t *testing.T, a, b string) float64 {
 	t.Helper()
 	la, lb := relLuminance(t, a), relLuminance(t, b)
 	return (math.Max(la, lb) + 0.05) / (math.Min(la, lb) + 0.05)
+}
+
+// cieLab and deltaE76 measure how far apart two colours LOOK, hue included,
+// which contrastRatio cannot: it compares luminance alone, so a rose and a grey
+// of equal brightness score as one colour.
+func cieLab(t *testing.T, hex string) [3]float64 {
+	t.Helper()
+	c := linearRGB(t, hex)
+	xyz := [3]float64{
+		(0.4124*c[0] + 0.3576*c[1] + 0.1805*c[2]) / 0.95047,
+		0.2126*c[0] + 0.7152*c[1] + 0.0722*c[2],
+		(0.0193*c[0] + 0.1192*c[1] + 0.9505*c[2]) / 1.08883,
+	}
+	for i, v := range xyz {
+		if v > 0.008856 {
+			xyz[i] = math.Cbrt(v)
+		} else {
+			xyz[i] = 7.787*v + 16.0/116
+		}
+	}
+	return [3]float64{116*xyz[1] - 16, 500 * (xyz[0] - xyz[1]), 200 * (xyz[1] - xyz[2])}
+}
+
+func deltaE76(t *testing.T, a, b string) float64 {
+	t.Helper()
+	la, lb := cieLab(t, a), cieLab(t, b)
+	dL, da, db := la[0]-lb[0], la[1]-lb[1], la[2]-lb[2]
+	return math.Sqrt(dL*dL + da*da + db*db)
 }
 
 // TestSurfacesAreActuallyDistinct pins that a preset's inset surfaces differ
@@ -410,6 +446,33 @@ func TestControlReadsAsAControlInEveryPreset(t *testing.T) {
 			}
 			if got := contrastRatio(t, th.ChipText, th.Chip); got < minInk {
 				t.Fatalf("ChipText (%s) on Chip (%s) contrast = %.2f, want >= %.2f: that is the ARMED button's label, the one a keystroke acts on", th.ChipText, th.Chip, got, minInk)
+			}
+		})
+	}
+}
+
+// TestActiveAndResolvedAuthorsAreToldApart pins that an OPEN thread's author
+// line (Accent, through ui.Styles.CardHeader) and a RESOLVED one's (Dim,
+// through CardHeaderResolved) read as two states at a glance.
+//
+// IT MEASURES APPEARANCE, NOT LUMINANCE, because luminance is what failed.
+// Quartz first shipped a slate Accent (#3a4250) over its slate Dim (#5f6673):
+// two hexes, 1.75:1 apart by contrast ratio -- MORE than dark's or light's
+// pair -- and in a real terminal a resolved comment could not be told from an
+// open one. Dark and light separate the pair by HUE (gold and rose against
+// grey), which contrastRatio cannot see: light's scores 1.13:1. CIELAB
+// distance sees both. The built-in presets sit near 50 and the rejected slate
+// at 15; the floor sits between them.
+func TestActiveAndResolvedAuthorsAreToldApart(t *testing.T) {
+	const minDeltaE = 30
+	for _, name := range Names() {
+		t.Run(name, func(t *testing.T) {
+			th, err := Lookup(name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := deltaE76(t, th.Accent, th.Dim); got < minDeltaE {
+				t.Fatalf("Accent (%s) vs Dim (%s) is %.1f apart (CIE76), want >= %d: an open thread's author line would read as a resolved one's", th.Accent, th.Dim, got, minDeltaE)
 			}
 		})
 	}
