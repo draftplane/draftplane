@@ -1200,8 +1200,8 @@ func (z zoneStyles) forGlyph(t glyphTint) lipgloss.Style {
 	case tintQuiet:
 		return z.dim
 	}
-	// ◐ IS OK's TOKEN AND NOT Accent's (green on dark, cerulean on light),
-	// WHICH IS A SHARED COLOUR ON PURPOSE:
+	// ◐ IS OK's TOKEN AND NOT Accent's (green on dark and quartz, cerulean on
+	// light), WHICH IS A SHARED COLOUR ON PURPOSE:
 	// ● approved and ◐ open are both "this plan has been engaged with", and the
 	// GLYPH carries which. That is the review view's own scheme, where the
 	// gutter mark draws ※ open and ○ all-resolved in one colour and lets the
@@ -1353,7 +1353,8 @@ func (m *ListModel) renderBodyRowPainted(r row, isCursor bool) string {
 		// Accent is the ink because the client already spends it on a heading a
 		// reader is meant to find (theme.PanelHead holds its dark hex for the
 		// panel headlines), and it is the one standing role that answers a
-		// legible colour in BOTH presets -- gold on dark, mauve on light.
+		// legible colour in EVERY preset -- gold on dark, mauve on light, slate
+		// on quartz.
 		textStyle = z.accent.Bold(true)
 	}
 	inner := max(rowWidth-listBandWidth, 0)

@@ -117,7 +117,7 @@ type Styles struct {
 	// Chip is a PANEL CONTROL THAT IS CURRENTLY ARMED -- the compose panel's
 	// focused button, and the one style here that inverts rather than tints:
 	// theme.ChipText's ink on theme.Chip's ground, where theme.Chip holds
-	// theme.Focus's own hex in both presets and ChipText is the ink chosen for
+	// theme.Focus's own hex in every preset and ChipText is the ink chosen for
 	// it. Focus reaches the screen NOWHERE ELSE: the panel headline it used to
 	// ink is theme.PanelHead now, so in dark this ground is the last of that blue
 	// and a control wearing it reads as the one thing on the row that a keystroke
@@ -136,13 +136,13 @@ type Styles struct {
 	// rather than as more panel.
 	//
 	// IT IS theme.Control AND NOT theme.Field, and the difference only shows in
-	// ONE preset: they hold the same hex in light, and the idle button rendered
-	// through Field until someone drove it on a real terminal. In dark,
+	// dark: they hold the same hex in light and quartz, and the idle button
+	// rendered through Field until someone drove it on a real terminal. In dark,
 	// Field's step is DOWNWARD from a row already near the palette floor and
 	// the two buttons read as gaps in the line rather than as controls.
 	//
 	// UNLIKE Chip IT NEEDS NO INK TOKEN: Text clears WCAG AA on the ground in
-	// both presets, so the label wears the same ink as the panel around it.
+	// every preset, so the label wears the same ink as the panel around it.
 	Control lipgloss.Style
 	Help    lipgloss.Style
 

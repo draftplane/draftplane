@@ -7117,10 +7117,10 @@ func darkStyles(tb testing.TB) *Styles {
 	return NewStyles(th)
 }
 
-// lightStyles is the OTHER preset, for the one assertion that needs two Styles
-// whose rendered output actually differs: two Styles built from the same theme
-// paint byte-identical rows, so they cannot tell a key that reads the styles
-// from one that ignores them.
+// lightStyles is a preset other than the default, for the one assertion that
+// needs two Styles whose rendered output actually differs: two Styles built
+// from the same theme paint byte-identical rows, so they cannot tell a key that
+// reads the styles from one that ignores them.
 func lightStyles(tb testing.TB) *Styles {
 	tb.Helper()
 	th, err := theme.Lookup("light")
