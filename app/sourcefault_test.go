@@ -863,6 +863,11 @@ func TestTheCentredPanelAddsNoRowThroughTheRealDoor(t *testing.T) {
 // reworded headline or a changed width that stopped exercising the wrap goes
 // red rather than quietly measuring the one-row case twice.
 func TestTheCentredPanelBorderIsOneColourAndItsHeadIsWarn(t *testing.T) {
+	// Not theme.Names(): quartz spends one raspberry on Warn and PanelHead, so
+	// the guard below could not tell its head from a FocusHeader revert. Dark
+	// and light hold the two roles apart, and the box reads its tokens the same
+	// way whatever their values; the mode gate (theme.PanelHead) keeps the two
+	// inks off one screen.
 	for _, name := range []string{"dark", "light"} {
 		th, err := theme.Lookup(name)
 		if err != nil {
@@ -2570,7 +2575,7 @@ func TestTheDeleteConfirmIsTheSameBoxPanel1WasIn(t *testing.T) {
 // input box can be denoted by a different slightly darker background shade"
 // instead of a second bordered rectangle inside the panel's own.
 //
-// IT RUNS ON AN UNSTRIPPED FRAME IN BOTH PRESETS: every geometry assertion in
+// IT RUNS ON AN UNSTRIPPED FRAME IN EVERY PRESET: every geometry assertion in
 // this file runs on a stripped frame, and a stripped frame cannot show a colour
 // bug -- the two-colour border survived the whole suite that way. One preset is
 // not enough for a ground either: theme.Strip is a step that reads in dark and
@@ -2581,7 +2586,7 @@ func TestTheDeleteConfirmIsTheSameBoxPanel1WasIn(t *testing.T) {
 // one value the band disappears and every assertion below still passes, so the
 // two grounds are required to differ before anything is measured over them.
 func TestTheRepointFieldIsABandInItsOwnZone(t *testing.T) {
-	for _, preset := range []string{"dark", "light"} {
+	for _, preset := range theme.Names() {
 		t.Run(preset, func(t *testing.T) {
 			m := repointPane(t, preset)
 			st := m.styles

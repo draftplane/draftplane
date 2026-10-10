@@ -18,6 +18,7 @@ func TestLookup(t *testing.T) {
 	}{
 		{name: "dark"},
 		{name: "light"},
+		{name: "quartz"},
 		// All three were theme names once and none is a palette now. "system"
 		// is still a legal SETTING; see
 		// TestSettingIsTheCONFIGVocabularyAndLookupIsThePALETTEOne.
@@ -228,13 +229,14 @@ func TestSurfacesAreActuallyDistinct(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		// codeSurface is whether the preset gives inline code a background
-		// of its OWN. Dark does; light deliberately does not, and the
+		// of its OWN. Dark does; light and quartz deliberately do not, and the
 		// difference is pinned rather than tolerated because "CodeBg equals
 		// Doc" is also what the bug it guards looked like.
 		codeSurface bool
 	}{
 		{"dark", true},
 		{"light", false},
+		{"quartz", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			th, err := Lookup(tc.name)
@@ -248,8 +250,9 @@ func TestSurfacesAreActuallyDistinct(t *testing.T) {
 				t.Fatalf("Card (%s) vs Doc (%s) contrast = %.2f, want >= %.2f", th.Card, th.Doc, got, minStep)
 			}
 			if !tc.codeSurface {
-				// Light has none: Code sits at 7.6 against parchment
-				// unaided, so a box adds nothing.
+				// Light and quartz have none: Code sits at 7.6 against
+				// parchment and 6.1 against white unaided, so a box adds
+				// nothing.
 				if th.CodeBg != th.Doc {
 					t.Fatalf("CodeBg = %s, want Doc (%s): this preset marks code by ink alone", th.CodeBg, th.Doc)
 				}
@@ -294,7 +297,9 @@ func TestSurfacesAreActuallyDistinct(t *testing.T) {
 // the product's site was taken as the reference against. LIGHT CANNOT MAKE THAT
 // CLAIM AND DOES NOT TRY: its headline and its chip ground have both been
 // #00699f since before this role existed, and leaving light alone means leaving
-// that alone too.
+// that alone too. QUARTZ DOES NOT TRY EITHER, BY CHOICE: its headline, its chip
+// ground and its Warn are one raspberry, kept after a slate headline was tried
+// beside it in the app.
 func TestPanelHeadIsDarksGoldAndLeavesLightWhereItWas(t *testing.T) {
 	// WCAG AA for body text. The headline is bold, but it is a sentence read
 	// rather than a mark spotted, so it answers to the body floor.
@@ -304,11 +309,12 @@ func TestPanelHeadIsDarksGoldAndLeavesLightWhereItWas(t *testing.T) {
 		want string
 		// offChip is whether this preset's headline is a different hex from
 		// its own armed-button ground. Dark's is, and that IS this change;
-		// light's never was.
+		// light's never was, and quartz's is not by choice.
 		offChip bool
 	}{
 		{"dark", "#e2a356", true},
 		{"light", "#00699f", false},
+		{"quartz", "#a8386c", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			th, err := Lookup(tc.name)
@@ -330,7 +336,7 @@ func TestPanelHeadIsDarksGoldAndLeavesLightWhereItWas(t *testing.T) {
 	}
 }
 
-// TestControlReadsAsAControlInBothPresets pins the one property the Control
+// TestControlReadsAsAControlInEveryPreset pins the one property the Control
 // token exists to hold, and it pins the DIRECTION of the step rather than only
 // its size, because size alone cannot tell the rejected design from the chosen
 // one. The dark idle button tried on a real terminal and turned down (it wore
@@ -342,15 +348,16 @@ func TestPanelHeadIsDarksGoldAndLeavesLightWhereItWas(t *testing.T) {
 // row is nowhere near its ceiling.
 //
 // So a control at rest is LIGHTER than its row in dark and DARKER than it in
-// light -- opposite directions, which is precisely what no single shared role
+// light and quartz -- opposite directions, which is precisely what no single shared role
 // could express and the whole reason this token is not Field. Retuning the
 // palette is the repo owner's business and no hex is pinned here; reversing
 // one of these directions is not a retune, it would reinstate the rejected
 // ground this test's first paragraph measures.
 //
 // THE INK IS CHECKED IN THE SAME BREATH, because it is why ONE token was
-// enough: Text clears WCAG AA on both grounds (6.0:1 dark, 9.6:1 light), so the
-// idle button needed no paired ink token the way Chip needed ChipText. A retune
+// enough: Text clears WCAG AA on every preset's ground (6.0:1 dark, 9.6:1 light,
+// 13.6:1 quartz), so the idle button needed no paired ink token the way Chip
+// needed ChipText. A retune
 // that walks Control toward Text takes that away silently -- the label goes on
 // being drawn in Text either way.
 //
@@ -366,12 +373,12 @@ func TestPanelHeadIsDarksGoldAndLeavesLightWhereItWas(t *testing.T) {
 // for exactly one ground and, before this line, the only thing any test in this
 // package asked of it was that it be a well-formed hex.
 //
-// IT CLEARS AA WITH ROOM TODAY (5.6:1 dark, 5.3:1 light) AND THAT IS THE POINT.
-// theme.Chip holds theme.Focus's own hex in both presets, so retuning the FOCUS
-// colour -- a change nobody would file under "buttons" -- moves this ground out
+// IT CLEARS AA WITH ROOM TODAY (5.6:1 dark, 5.3:1 light, 6.1:1 quartz) AND THAT
+// IS THE POINT. theme.Chip holds theme.Focus's own hex in every preset, so
+// retuning the FOCUS colour -- a change nobody would file under "buttons" -- moves this ground out
 // from under an ink that goes on being painted on it regardless. Room is what a
 // silent slide is made of, not a reason to leave the floor unstated.
-func TestControlReadsAsAControlInBothPresets(t *testing.T) {
+func TestControlReadsAsAControlInEveryPreset(t *testing.T) {
 	const (
 		minStep = 1.05
 		minInk  = 4.5 // WCAG AA for body text
@@ -380,11 +387,12 @@ func TestControlReadsAsAControlInBothPresets(t *testing.T) {
 		name string
 		// lighterThanRow is which way this preset's idle button steps off its
 		// row: up, away from the palette floor, in dark; down, away from the
-		// parchment ceiling, in light.
+		// ceiling, in light and quartz.
 		lighterThanRow bool
 	}{
 		{"dark", true},
 		{"light", false},
+		{"quartz", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			th, err := Lookup(tc.name)
@@ -435,6 +443,7 @@ func TestSettingResolvesPresetsAndRefusesTheRest(t *testing.T) {
 	}{
 		{name: "dark"},
 		{name: "light"},
+		{name: "quartz"},
 		{name: SystemName, wantNil: true},
 		{name: "harbor-dark", wantNil: true, wantErr: true},
 		{name: "", wantNil: true, wantErr: true},

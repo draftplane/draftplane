@@ -5798,11 +5798,11 @@ func TestThePaintedSortModalPaintsEveryCellOfItsOwnBox(t *testing.T) {
 // still loud" are one claim: split, a fix that also greyed the title would pass
 // the half that was failing and take the point of it away.
 //
-// IT IS DRIVEN IN BOTH PRESETS. The two styles hold different hexes in each
-// preset, and a box reading the right token in one and the wrong one in the
-// other is the exact shape of what is being removed.
+// IT IS DRIVEN IN EVERY PRESET. The two styles hold different hexes in each
+// preset, and a box reading the right token in one and the wrong one in
+// another is the exact shape of what is being removed.
 func TestTheSortModalBorderIsOneColourAllTheWayRound(t *testing.T) {
-	for _, name := range []string{"dark", "light"} {
+	for _, name := range theme.Names() {
 		th, err := theme.Lookup(name)
 		if err != nil {
 			t.Fatal(err)
@@ -6064,7 +6064,7 @@ func sgrRGB(t *testing.T, hex string) string {
 // both take Brand -- not the Accent the ◐ state glyph uses, which is the
 // overload the split exists to break. The two were literally one style, so
 // this also guards their having been separated rather than merely recoloured
-// together. IT ALSO PINS THE MASTHEAD BOX'S BOLD, off, at both presets --
+// together. IT ALSO PINS THE MASTHEAD BOX'S BOLD, off, at every preset --
 // viewPainted's own masthead-block comment has the full account of why.
 func TestListMastheadAndCursorBandCarryBrand(t *testing.T) {
 	th, err := theme.Lookup("dark")
@@ -6076,9 +6076,9 @@ func TestListMastheadAndCursorBandCarryBrand(t *testing.T) {
 	// masthead-block comment records why: the wordmark's weight was fixed by
 	// turning bold off, and the border was left bold-off too for one consistent
 	// style, even though that half is close to invisible on most terminals).
-	// Driven at both presets, since Brand's hex differs between them and a
+	// Driven at every preset, since Brand's hex differs between them and a
 	// single-theme check could pass on the wrong constant by coincidence.
-	for _, name := range []string{"dark", "light"} {
+	for _, name := range theme.Names() {
 		t.Run(name, func(t *testing.T) {
 			tm, err := theme.Lookup(name)
 			if err != nil {
@@ -6190,11 +6190,12 @@ func TestListMastheadAndCursorBandCarryBrand(t *testing.T) {
 // reason: a change painting EVERY chrome row Accent satisfies "the name is
 // Accent" while destroying the distinction the ink was spent on.
 //
-// IT DRIVES BOTH PRESETS, because the ink is the claim and Accent is a
-// different hue in each -- gold on dark, mauve on light. A dark-only check
-// cannot see a light preset whose section name went somewhere else.
+// IT DRIVES EVERY PRESET, because the ink is the claim and Accent is a
+// different hue in each -- gold on dark, mauve on light, slate on quartz. A
+// dark-only check cannot see a light preset whose section name went somewhere
+// else.
 func TestListSectionAndLabelsPartCompany(t *testing.T) {
-	for _, preset := range []string{"dark", "light"} {
+	for _, preset := range theme.Names() {
 		th, err := theme.Lookup(preset)
 		if err != nil {
 			t.Fatal(err)

@@ -4,7 +4,8 @@
 // needs a partial-theme check -- but Setting and Load return a *Theme a caller
 // must test, because of the one setting that resolves to no palette at all.
 //
-// There are two PALETTES, "dark" and "light", and Lookup answers only those.
+// There are three PALETTES, "dark", "light" and "quartz", and Lookup answers
+// only those.
 // "system" belongs to a different vocabulary: it is a SETTING, a legal value of
 // theme.json's "theme" key meaning "no preset chosen, match the terminal".
 // Setting accepts it and answers a nil Theme; Lookup refuses it. See
@@ -37,14 +38,15 @@ type Theme struct {
 	Brand string
 	// Heading colours EVERY heading, sigil and words alike, at every level.
 	//
-	// The two presets assign the roles differently, deliberately: dark spends
-	// rose on identity and position and bronze on state, light a cerulean on
-	// identity and a rose on state. A role is a role in both; which hue fills
-	// it is a question about the ground it sits on.
+	// The presets assign the roles differently, deliberately: dark spends rose
+	// on identity and position and bronze on state, light a cerulean on
+	// identity and a rose on state, and quartz one raspberry on both, leaving
+	// slate for the thread card's author line. A role is a role in every
+	// preset; which hue fills it is a question about the ground it sits on.
 	//
-	// In the dark preset it holds the SAME VALUE as Brand, and the two stay
-	// separate tokens: collapsing them would silently move every heading the
-	// next time the cursor's colour is retuned.
+	// In the dark and quartz presets it holds the SAME VALUE as Brand, and the
+	// two stay separate tokens: collapsing them would silently move every
+	// heading the next time the cursor's colour is retuned.
 	Heading string
 	// Warn is the colour of a centred panel's own HEAD ZONE (app.headThenBody's
 	// inkHead, spent through ui.Styles.WarnHeader) -- the head line of every
@@ -52,11 +54,12 @@ type Theme struct {
 	// prompts -- plus the re-point pane's own refusal row (app.inkWarn), which
 	// sits under the input rather than at the top of the body.
 	//
-	// It is a role of its own because no other token is rose in BOTH presets:
-	// it is Heading/Brand in dark and Accent in light. Dark's Heading, Brand
-	// and Warn happen to hold the identical value today; that is a fact about
-	// today's values, not a promise, and sharing a token would drag this
-	// headline's colour along the next time one of them is retuned.
+	// It is a role of its own because no other token is rose in EVERY preset:
+	// it is Heading/Brand in dark and quartz and Accent in light. Dark's
+	// Heading, Brand and Warn happen to hold the identical value today, and
+	// quartz's PanelHead joins them; that is a fact about today's values, not a
+	// promise, and sharing a token would drag this headline's colour along the
+	// next time one of them is retuned.
 	Warn string
 	// PanelHead is the ink of A PANEL'S LEADING LINE -- the line naming what the
 	// panel is about to do. The compose panel's "comment on:", every confirm
@@ -82,45 +85,52 @@ type Theme struct {
 	// match removes. So dark carries Accent's hex and light carries Focus's, and
 	// NEITHER TOKEN IS READ TO GET THEM: retuning the thread card's author line
 	// must not drag a panel's headline along behind it.
+	//
+	// QUARTZ CARRIES Warn's RASPBERRY, which makes its two panel inks one
+	// colour. The mode gate above is what allows it, and it was chosen in the
+	// app over a slate headline. It costs one test:
+	// TestTheCentredPanelBorderIsOneColourAndItsHeadIsWarn tells the two inks
+	// apart by colour and so runs on dark and light only.
 	PanelHead string
 	// Field is the ground a TEXT INPUT sits on inside a panel (app.centredBox's
 	// inkField) -- the re-point panes on both doors today.
 	//
-	// It holds StatusBar's value in both presets but stays a separate token:
+	// It holds StatusBar's value in every preset but stays a separate token:
 	// retuning the status bar should not move a panel's input field. Strip is
 	// not reused for it because Strip sits only three units off Chrome in
 	// light, which is invisible on a real terminal; a role has to answer in
-	// both presets.
+	// every preset.
 	Field string
 	// Control is the ground a PANEL CONTROL AT REST sits on -- a button nobody
 	// has armed. Chip is the same control once the ring lands on it, and the
 	// pair is deliberately two tokens: they are two states of one thing and
 	// nothing about the armed colour predicts the resting one.
 	//
-	// THE TWO PRESETS STEP OFF THEIR ROW IN OPPOSITE DIRECTIONS, and that is
-	// the whole reason this token exists rather than the compose panel reusing
-	// Field. An idle button sits on the button row, which is Strip. Light's
-	// Control is DARKER than Strip and reads as a raised band; dark's is
-	// LIGHTER than Strip, because dark's row is already close to the palette's
-	// floor and one more step down reads as a hole punched through the row
-	// rather than as a button. Field is a step down in both presets, which is
-	// right for a text input -- an inset a reader types into -- and wrong here
-	// in exactly one of the two. No single role can face both ways, so the
+	// THE PRESETS STEP OFF THEIR ROW IN OPPOSITE DIRECTIONS, and that is the
+	// whole reason this token exists rather than the compose panel reusing
+	// Field. An idle button sits on the button row, which is Strip. Light's and
+	// quartz's Control is DARKER than Strip and reads as a raised band; dark's
+	// is LIGHTER than Strip, because dark's row is already close to the
+	// palette's floor and one more step down reads as a hole punched through
+	// the row rather than as a button. Field is a step down in every preset,
+	// which is right for a text input -- an inset a reader types into -- and
+	// wrong here in dark alone. No single role can face both ways, so the
 	// direction is what forced a second token, not the size of the step: the
 	// rejected dark ground and the one chosen in its place stand 1.45:1 and
 	// 1.44:1 off the same row.
 	//
 	// IT CARRIES NO INK TOKEN OF ITS OWN, unlike Chip/ChipText: Text clears
-	// WCAG AA on both grounds (6.0:1 dark, 9.6:1 light), so the button's label
-	// is the same ink as the panel around it. What fails if a retune takes
-	// either fact away is TestControlReadsAsAControlInBothPresets.
+	// WCAG AA on every preset's ground (6.0:1 dark, 9.6:1 light, 13.6:1
+	// quartz), so the button's label is the same ink as the panel around it.
+	// What fails if a retune takes either fact away is
+	// TestControlReadsAsAControlInEveryPreset.
 	Control string
 	Card    string
 	Accent  string
 	Strip   string
 	// Focus is the ARMED hue -- what the ring lands on. It reaches the screen
 	// only as Chip's ground (ui.Styles.Chip, under ChipText), which holds the
-	// identical hex in both presets.
+	// identical hex in every preset.
 	//
 	// IT HAD A SECOND JOB UNTIL PanelHead TOOK IT, and that is why ui.Styles
 	// still calls the panel headline's style FocusHeader: every panel's leading
@@ -190,6 +200,31 @@ var presets = map[string]*Theme{
 		Badge:      "#6f6a5c",
 		Code:       "#5f4a12",
 		CodeBg:     "#f9f2e0",
+	},
+	"quartz": {
+		Rail:       "#f3f6f9",
+		Chrome:     "#eef2f6",
+		Doc:        "#ffffff",
+		Text:       "#1a1e25",
+		Dim:        "#5f6673",
+		Brand:      "#a8386c",
+		Heading:    "#a8386c",
+		Warn:       "#a8386c",
+		PanelHead:  "#a8386c",
+		Field:      "#e3e8ee",
+		Control:    "#e3e8ee",
+		Card:       "#f3f6f9",
+		Accent:     "#3a4250",
+		Strip:      "#f3f6f9",
+		Focus:      "#a8386c",
+		StatusBar:  "#e3e8ee",
+		StatusText: "#3a4250",
+		Chip:       "#a8386c",
+		ChipText:   "#ffffff",
+		OK:         "#256b40",
+		Badge:      "#5f6673",
+		Code:       "#a8386c",
+		CodeBg:     "#ffffff",
 	},
 }
 
@@ -265,7 +300,7 @@ func Load(path string) (string, *Theme, error) {
 
 // SystemName is the setting that means "no preset chosen -- match the
 // terminal": the ABSENCE of a choice, resolved by asking the terminal for its
-// background and picking one of the two real presets. It is a legal value of
+// background and picking dark or light by it. It is a legal value of
 // theme.json's "theme" key and it is NOT a palette, so Setting accepts it and
 // answers a nil Theme while Lookup goes on refusing it.
 const SystemName = "system"

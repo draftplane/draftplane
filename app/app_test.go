@@ -3356,7 +3356,7 @@ func paintedFGNear(rendered, bg string) string {
 // Field, until a later change moved the button to Control and left the entry
 // behind.
 func TestComposePaintStylesAlwaysCarryBackground(t *testing.T) {
-	for _, name := range []string{"dark", "light"} {
+	for _, name := range theme.Names() {
 		th, err := theme.Lookup(name)
 		if err != nil {
 			t.Fatal(err)
@@ -4994,7 +4994,7 @@ func TestRelocatePanelPaintedNeverWraps(t *testing.T) {
 // st.Card.Width(...) wrap were reverted back to st.Chrome — this asserts the
 // row's actual background zone directly.
 func TestRelocatePanelPaintedCardZoneDistinctFromChrome(t *testing.T) {
-	for _, name := range []string{"dark", "light"} {
+	for _, name := range theme.Names() {
 		t.Run(name, func(t *testing.T) {
 			th, err := theme.Lookup(name)
 			if err != nil {
