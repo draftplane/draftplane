@@ -86,13 +86,13 @@ See more on the [workflows page](https://draftplane.io/workflows.html).
 
 ## Commands
 
-|                                           |                                                             |
-| ----------------------------------------- | ----------------------------------------------------------- |
-| `draftplane`                              | open the plan list                                          |
-| `draftplane review <path\|id>`            | open a plan by file or by id                                |
-| `draftplane theme [dark\|light\|system]`  | show or set the theme                                       |
-| `draftplane mcp`                          | the stdio MCP server for your agent                         |
-| `draftplane version`                      | the installed version                                       |
+|                                                  |                                                      |
+| ------------------------------------------------ | ---------------------------------------------------- |
+| `draftplane`                                     | open the plan list                                   |
+| `draftplane review <path\|id>`                   | open a plan by file or by id                         |
+| `draftplane theme [dark\|light\|quartz\|system]` | show or set the theme                                |
+| `draftplane mcp`                                 | the stdio MCP server for your agent                  |
+| `draftplane version`                             | the installed version                                |
 
 Draftplane is free and licensed under the [MIT license](https://github.com/draftplane/draftplane/blob/main/LICENSE)
 
