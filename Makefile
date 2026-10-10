@@ -1,4 +1,4 @@
-.PHONY: check fmt vet lint test notices notices-check dist npm npm\:pack clean
+.PHONY: check fmt vet lint test notices notices-check dist npm npm\:pack npm\:publish clean
 
 # Run every gate the CI workflow used to run.
 # VERSION is the release identity stamped into the binary. `git describe`
@@ -113,6 +113,22 @@ npm: dist
 # unquoted, as `make npm:pack`.
 npm\:pack:
 	@./scripts/pack-npm.sh
+
+# npm:publish publishes the tarballs npm:pack produced, in the order the
+# wrapper needs: the four platform packages, a wait until all four resolve on
+# the registry, then the wrapper. It logs in if there is anything to publish
+# and npm has no session, and asks once before anything goes out, since a
+# published version cannot be reused.
+#
+# Like npm:pack it has NO PREREQUISITE, and for the same reason: it publishes
+# what is on disk, which is what a local install was tested against. It errors
+# naming 'make npm:pack' when a tarball is missing.
+#
+# It is safe to re-run after a timeout; anything already published is skipped.
+# The wait is tunable, in seconds:
+#   make npm:publish POLL_INTERVAL=15 POLL_TIMEOUT=1800
+npm\:publish:
+	@./scripts/publish-npm.sh
 
 # clean removes the build outputs and nothing else. The two paths are the ones
 # .gitignore already names, which is this repository's own standing answer to
