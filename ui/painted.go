@@ -339,9 +339,10 @@ func continuesGrid(blocks []Block, grids map[int][]string, i int) bool {
 //
 // IT IS ONE OF FOUR VERTICALS IN THIS VIEW AND THE OTHER THREE MEAN SOMETHING
 // ELSE: '┃' in Brand is "the cursor is on this block" (cursorGlyph, above),
-// '|' in Accent-and-bold -- Dim-and-bold-italic once the thread is resolved --
-// is "this line is a comment header" (commentMarker, ui/render.go), and '│' in
-// Dim is a table's column boundary (borderStyleOf and tableGridBorder, below).
+// '|' in Accent-and-bold -- Dim-and-bold once the thread is resolved, and
+// never italic -- is "this line is a comment header" (commentMarker,
+// ui/render.go), and '│' in Dim is a table's column boundary (borderStyleOf
+// and tableGridBorder, below).
 // A reader must never read QUOTED as COMMENTED, which is what rules out '│'
 // here: it is the same thin centred stroke as '|' in the same place, pixel IoU
 // 0.49-0.87 against it. '▎' hugs the cell's LEFT EDGE and its ink is DISJOINT
@@ -1430,7 +1431,9 @@ func renderThreadCardPainted(v ThreadView, width int, pseudonym string, st *Styl
 		headStyle, bodyStyle = st.CardHeaderResolved, st.CardBodyResolved
 	}
 	for i, c := range v.Thread.Comments {
-		head := renderControls(commentMarker+" "+FormatAttribution(c.Attribution, pseudonym), headStyle)
+		// The marker is upright whatever the header's style: a resolved header
+		// is italic, and an italic '|' is a broken bar in some terminal fonts.
+		head := headStyle.Italic(false).Render(commentMarker+" ") + renderControls(FormatAttribution(c.Attribution, pseudonym), headStyle)
 		if i == 0 && v.Badge != "" {
 			head += st.Card.Render(" ") + st.Badge.Render("["+v.Badge+"]")
 		}

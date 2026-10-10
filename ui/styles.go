@@ -58,7 +58,9 @@ type Styles struct {
 	// rather than announcing itself in Accent beside the label saying it is
 	// done. The attribution is ITALIC too -- bodies were already italic, so
 	// dimming alone left the header upright above them and the card only half
-	// receded -- and it keeps its bold so the card's structure survives.
+	// receded -- and it keeps its bold so the card's structure survives. Its
+	// '|' marker is drawn upright (renderThreadCardPainted), because an italic
+	// one is a broken bar in some terminal fonts.
 	CardHeaderResolved lipgloss.Style
 	CardBodyResolved   lipgloss.Style
 	CardBody           lipgloss.Style

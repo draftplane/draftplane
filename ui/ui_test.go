@@ -6128,15 +6128,16 @@ func singleCommentCard(attr domain.Attribution) ThreadView {
 // TestRenderThreadCardAttributionUnstripped pins the card's per-comment header
 // against every case in attributionCases, through the same ui.ThreadCardLines
 // entry point the document view and the relocate panel both call, WITHOUT
-// stripping ANSI: the header text has to survive as one contiguous run in the
-// styled string, which is a property its twin below cannot see.
+// stripping ANSI: the attribution has to survive as one contiguous run in the
+// styled string, which is a property its twin below cannot see. The '|' before
+// it is a run of its own, drawn upright (TestThreadCardMarkerStaysUpright).
 func TestRenderThreadCardAttributionUnstripped(t *testing.T) {
 	for _, c := range attributionCases() {
 		t.Run(c.name, func(t *testing.T) {
 			lines := ThreadCardLines(singleCommentCard(c.attr), 100, "calm-mountain", darkStyles(t))
 			joined := strings.Join(lines, "\n")
-			if !strings.Contains(joined, "| "+c.want) {
-				t.Fatalf("lines = %q, want a header line %q", lines, "| "+c.want)
+			if !strings.Contains(joined, c.want) {
+				t.Fatalf("lines = %q, want an attribution run %q", lines, c.want)
 			}
 		})
 	}
@@ -6144,8 +6145,8 @@ func TestRenderThreadCardAttributionUnstripped(t *testing.T) {
 
 // TestRenderThreadCardPaintedAttribution is
 // TestRenderThreadCardAttributionUnstripped's twin, driven through the
-// identical entry point and asserting on the STRIPPED render: a header the
-// styles happened to split across two Render calls reads correctly here and
+// identical entry point and asserting on the STRIPPED render: an attribution
+// the styles happened to split across two Render calls reads correctly here and
 // fails there, so the pair pins the text and its contiguity separately.
 func TestRenderThreadCardPaintedAttribution(t *testing.T) {
 	th, err := theme.Lookup("dark")
@@ -6474,26 +6475,37 @@ func rowContaining(t *testing.T, lines []Line, want string) string {
 	return found[0]
 }
 
-// sgrSeq matches one SGR escape; fgOver walks a rendered row and reports the
-// truecolor foreground ("38;2;r;g;b") active over the first text run that
-// contains want. A whole-row strings.Contains cannot do this job: swapping
-// two styles WITHIN a row leaves the row's set of escapes identical, so an
-// assertion that only asks "is this colour present somewhere" passes on a
-// sigil and its words wearing each other's colour -- verified by mutation,
-// which is how this helper came to exist.
+// sgrSeq matches one SGR escape; sgrOver walks a rendered row and reports the
+// truecolor foreground ("38;2;r;g;b") and the italic active over the one text
+// run that contains want, and fgOver is its foreground alone. A whole-row
+// strings.Contains cannot do this job: swapping two styles WITHIN a row leaves
+// the row's set of escapes identical, so an assertion that only asks "is this
+// colour present somewhere" passes on a sigil and its words wearing each
+// other's colour -- verified by mutation, which is how this helper came to
+// exist.
 var sgrSeq = regexp.MustCompile("\x1b\\[[0-9;]*m")
 
 func fgOver(t *testing.T, row, want string) string {
 	t.Helper()
-	var hits []string
-	fg, pos := "", 0
+	fg, _ := sgrOver(t, row, want)
+	return fg
+}
+
+func sgrOver(t *testing.T, row, want string) (string, bool) {
+	t.Helper()
+	type run struct {
+		fg     string
+		italic bool
+	}
+	var hits []run
+	fg, italic, pos := "", false, 0
 	// An ambiguous want is refused rather than resolved to the first match,
 	// for the reason rowContaining refuses an ambiguous row: a caller whose
 	// want appears twice would be told the colour of a run it did not mean,
 	// which is exactly the silent-wrong-answer this helper exists to stop.
 	consider := func(text string) {
 		if strings.Contains(text, want) {
-			hits = append(hits, fg)
+			hits = append(hits, run{fg, italic})
 		}
 	}
 	// Both colour forms are parsed. Only 38;2 is reachable through
@@ -6507,7 +6519,11 @@ func fgOver(t *testing.T, row, want string) string {
 		for i := 0; i < len(params); i++ {
 			switch params[i] {
 			case "", "0":
-				fg = ""
+				fg, italic = "", false
+			case "3":
+				italic = true
+			case "23":
+				italic = false
 			case "38":
 				switch {
 				case i+4 < len(params) && params[i+1] == "2":
@@ -6532,7 +6548,7 @@ func fgOver(t *testing.T, row, want string) string {
 	if len(hits) != 1 {
 		t.Fatalf("text runs containing %q = %d, want exactly 1: %q", want, len(hits), row)
 	}
-	return hits[0]
+	return hits[0].fg, hits[0].italic
 }
 
 // TestPaintedHeadingsWearOneColourSigilAndWords pins the rule every heading
@@ -6669,7 +6685,7 @@ func TestPaintedThreadCardMarksStateNotWithARail(t *testing.T) {
 	if header == "" {
 		t.Fatalf("no comment header line in %q", card)
 	}
-	if got, want := fgOver(t, header, "| dana"), "38;2;"+sgrRGB(t, th.Accent); got != want {
+	if got, want := fgOver(t, header, "|"), "38;2;"+sgrRGB(t, th.Accent); got != want {
 		t.Fatalf("comment marker foreground = %q, want Accent %q: %q", got, want, header)
 	}
 	if rail := "48;2;" + sgrRGB(t, th.Accent); strings.Contains(card, rail) {
@@ -7029,7 +7045,7 @@ func TestResolvedThreadRecedesWhole(t *testing.T) {
 			if head == "" || body == "" {
 				t.Fatalf("card is missing a header or a body: %q", lines)
 			}
-			if got, want := fgOver(t, head, "| dana"), "38;2;"+sgrRGB(t, tc.want); got != want {
+			if got, want := fgOver(t, head, "dana-codes"), "38;2;"+sgrRGB(t, tc.want); got != want {
 				t.Fatalf("attribution foreground = %q, want %q (%s)", got, want, tc.want)
 			}
 			// ITALIC on the attribution is the other half: bodies are italic
@@ -7053,6 +7069,34 @@ func TestResolvedThreadRecedesWhole(t *testing.T) {
 				t.Fatalf("body foreground = %q, want %q (%s)", got, want, bodyWant)
 			}
 		})
+	}
+}
+
+// TestThreadCardMarkerStaysUpright pins that the '|' leading each comment's
+// header is drawn upright even where the header is italic, as a resolved
+// thread's is (TestResolvedThreadRecedesWhole). An italic '|' is a broken bar
+// in some terminal fonts, so on exactly the cards that had receded, the marker
+// tying a card's comments together drew as a dashed line on a real terminal.
+//
+// The attribution beside it is asserted still italic, so a fix that dropped
+// the italic from the whole header cannot pass.
+func TestThreadCardMarkerStaysUpright(t *testing.T) {
+	v := ThreadView{Thread: domain.Thread{Resolved: true, Comments: []domain.Comment{
+		{Attribution: domain.Attribution{ActorLogin: "dana-codes", ActorDisplay: "dana"}, Body: "the body"}}}}
+	var head string
+	for _, l := range ThreadCardLines(v, 100, "calm-mountain", darkStyles(t)) {
+		if strings.Contains(ansi.Strip(l), "dana-codes") {
+			head = l
+		}
+	}
+	if head == "" {
+		t.Fatal("the card has no header row")
+	}
+	if _, italic := sgrOver(t, head, "|"); italic {
+		t.Fatalf("the marker is italic, a broken bar in some fonts: %q", head)
+	}
+	if _, italic := sgrOver(t, head, "dana-codes"); !italic {
+		t.Fatalf("the attribution lost its italic, so the card only half recedes: %q", head)
 	}
 }
 
