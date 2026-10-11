@@ -18,10 +18,12 @@ func TestLookup(t *testing.T) {
 	}{
 		{name: "dark"},
 		{name: "light"},
-		{name: "quartz"},
-		// All three were theme names once and none is a palette now. "system"
-		// is still a legal SETTING; see
+		{name: "sand"},
+		// All four were theme names once and none is a palette now: quartz
+		// was renamed light when it became the light terminal's default.
+		// "system" is still a legal SETTING; see
 		// TestSettingIsTheCONFIGVocabularyAndLookupIsThePALETTEOne.
+		{name: "quartz", wantNil: true, wantErr: true},
 		{name: "harbor-dark", wantNil: true, wantErr: true},
 		{name: "ember-dark", wantNil: true, wantErr: true},
 		{name: "system", wantNil: true, wantErr: true},
@@ -69,12 +71,12 @@ func TestPresetsHaveEveryZoneSet(t *testing.T) {
 	}
 }
 
-// TestLightIsWarmParchmentNotBlueWhite pins the light palette's character: a
+// TestSandIsWarmParchmentNotBlueWhite pins the sand palette's character: a
 // decisively warm, parchment/paper canvas rather than a blue-white one.
 // TestSurfacesAreActuallyDistinct pins that Card differs from Doc; this pins
 // that it is still parchment while doing so.
-func TestLightIsWarmParchmentNotBlueWhite(t *testing.T) {
-	th, err := Lookup("light")
+func TestSandIsWarmParchmentNotBlueWhite(t *testing.T) {
+	th, err := Lookup("sand")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +90,7 @@ func TestLightIsWarmParchmentNotBlueWhite(t *testing.T) {
 	}
 	for field, w := range want {
 		if got[field] != w {
-			t.Fatalf("light %s = %q, want %q", field, got[field], w)
+			t.Fatalf("sand %s = %q, want %q", field, got[field], w)
 		}
 	}
 }
@@ -122,15 +124,15 @@ func TestLoadMissingFileSignalsDetect(t *testing.T) {
 
 func TestLoadValidPreset(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "theme.json")
-	if err := os.WriteFile(path, []byte(`{"theme": "light"}`), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(`{"theme": "sand"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	name, th, err := Load(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if name != "light" || th == nil || th.Doc != "#f9f2e0" {
-		t.Fatalf("Load = (%q, %+v), want light", name, th)
+	if name != "sand" || th == nil || th.Doc != "#f9f2e0" {
+		t.Fatalf("Load = (%q, %+v), want sand", name, th)
 	}
 }
 
@@ -265,14 +267,14 @@ func TestSurfacesAreActuallyDistinct(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		// codeSurface is whether the preset gives inline code a background
-		// of its OWN. Dark does; light and quartz deliberately do not, and the
+		// of its OWN. Dark does; sand and light deliberately do not, and the
 		// difference is pinned rather than tolerated because "CodeBg equals
 		// Doc" is also what the bug it guards looked like.
 		codeSurface bool
 	}{
 		{"dark", true},
+		{"sand", false},
 		{"light", false},
-		{"quartz", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			th, err := Lookup(tc.name)
@@ -286,7 +288,7 @@ func TestSurfacesAreActuallyDistinct(t *testing.T) {
 				t.Fatalf("Card (%s) vs Doc (%s) contrast = %.2f, want >= %.2f", th.Card, th.Doc, got, minStep)
 			}
 			if !tc.codeSurface {
-				// Light and quartz have none: Code sits at 7.6 against
+				// Sand and light have none: Code sits at 7.6 against
 				// parchment and 6.1 against white unaided, so a box adds
 				// nothing.
 				if th.CodeBg != th.Doc {
@@ -307,7 +309,7 @@ func TestSurfacesAreActuallyDistinct(t *testing.T) {
 	}
 }
 
-// TestPanelHeadIsDarksGoldAndLeavesLightWhereItWas pins the role the PANEL
+// TestPanelHeadIsDarksGoldAndLeavesSandWhereItWas pins the role the PANEL
 // HEADLINE reads -- ui.Styles.FocusHeader, worn by the compose panel's "comment
 // on:", the confirm strips that are not centred, the relocate header, and the
 // plan list's sort modal and rename prompt. Those are one style, so this is one
@@ -315,9 +317,9 @@ func TestSurfacesAreActuallyDistinct(t *testing.T) {
 //
 // IT IS A ROLE OF ITS OWN FOR theme.Warn's REASON, and the shape of the
 // argument is identical: no standing role answers gold in dark AND the cerulean
-// light already drew. Accent is that gold in dark and ROSE in light (#a8386c,
-// Warn's own value); Focus is that cerulean in light and the BLUE in dark this
-// change was made to remove. Reusing either would have moved light, and light
+// sand already drew. Accent is that gold in dark and ROSE in sand (#a8386c,
+// Warn's own value); Focus is that cerulean in sand and the BLUE in dark this
+// change was made to remove. Reusing either would have moved sand, and sand
 // was to stay exactly where it was.
 //
 // THE HEXES ARE PINNED RATHER THAN COMPARED TO THOSE TWO TOKENS. Asserting
@@ -330,13 +332,13 @@ func TestSurfacesAreActuallyDistinct(t *testing.T) {
 // button's GROUND (TestComposeButtonRowMarksTheFocusedButton pins that escape).
 // A retune walking the headline back onto that hex would put a panel's ink and
 // its armed button's ground on one colour again, which is the reading
-// the product's site was taken as the reference against. LIGHT CANNOT MAKE THAT
+// the product's site was taken as the reference against. SAND CANNOT MAKE THAT
 // CLAIM AND DOES NOT TRY: its headline and its chip ground have both been
-// #00699f since before this role existed, and leaving light alone means leaving
-// that alone too. QUARTZ DOES NOT TRY EITHER, BY CHOICE: its headline, its chip
+// #00699f since before this role existed, and leaving sand alone means leaving
+// that alone too. LIGHT DOES NOT TRY EITHER, BY CHOICE: its headline, its chip
 // ground and its Warn are one raspberry, kept after a slate headline was tried
 // beside it in the app.
-func TestPanelHeadIsDarksGoldAndLeavesLightWhereItWas(t *testing.T) {
+func TestPanelHeadIsDarksGoldAndLeavesSandWhereItWas(t *testing.T) {
 	// WCAG AA for body text. The headline is bold, but it is a sentence read
 	// rather than a mark spotted, so it answers to the body floor.
 	const minInk = 4.5
@@ -345,12 +347,12 @@ func TestPanelHeadIsDarksGoldAndLeavesLightWhereItWas(t *testing.T) {
 		want string
 		// offChip is whether this preset's headline is a different hex from
 		// its own armed-button ground. Dark's is, and that IS this change;
-		// light's never was, and quartz's is not by choice.
+		// sand's never was, and light's is not by choice.
 		offChip bool
 	}{
 		{"dark", "#e2a356", true},
-		{"light", "#00699f", false},
-		{"quartz", "#a8386c", false},
+		{"sand", "#00699f", false},
+		{"light", "#a8386c", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			th, err := Lookup(tc.name)
@@ -379,20 +381,20 @@ func TestPanelHeadIsDarksGoldAndLeavesLightWhereItWas(t *testing.T) {
 // Field, #0f1217) stood 1.45:1 off the row it sits on; the ground chosen in
 // its place stands 1.44:1 off that same row. Amount was never the fault. The
 // rejected ground stepped DOWN from a row already close to the
-// palette's floor and read as a hole punched through the button row; light
-// steps down from its own row too and reads as a raised band, because light's
+// palette's floor and read as a hole punched through the button row; sand
+// steps down from its own row too and reads as a raised band, because sand's
 // row is nowhere near its ceiling.
 //
 // So a control at rest is LIGHTER than its row in dark and DARKER than it in
-// light and quartz -- opposite directions, which is precisely what no single shared role
-// could express and the whole reason this token is not Field. Retuning the
+// sand and light -- opposite directions, which is precisely what no single
+// shared role could express and the whole reason this token is not Field. Retuning the
 // palette is the repo owner's business and no hex is pinned here; reversing
 // one of these directions is not a retune, it would reinstate the rejected
 // ground this test's first paragraph measures.
 //
 // THE INK IS CHECKED IN THE SAME BREATH, because it is why ONE token was
-// enough: Text clears WCAG AA on every preset's ground (6.0:1 dark, 9.6:1 light,
-// 13.6:1 quartz), so the idle button needed no paired ink token the way Chip
+// enough: Text clears WCAG AA on every preset's ground (6.0:1 dark, 9.6:1 sand,
+// 13.6:1 light), so the idle button needed no paired ink token the way Chip
 // needed ChipText. A retune
 // that walks Control toward Text takes that away silently -- the label goes on
 // being drawn in Text either way.
@@ -409,7 +411,7 @@ func TestPanelHeadIsDarksGoldAndLeavesLightWhereItWas(t *testing.T) {
 // for exactly one ground and, before this line, the only thing any test in this
 // package asked of it was that it be a well-formed hex.
 //
-// IT CLEARS AA WITH ROOM TODAY (5.6:1 dark, 5.3:1 light, 6.1:1 quartz) AND THAT
+// IT CLEARS AA WITH ROOM TODAY (5.6:1 dark, 5.3:1 sand, 6.1:1 light) AND THAT
 // IS THE POINT. theme.Chip holds theme.Focus's own hex in every preset, so
 // retuning the FOCUS colour -- a change nobody would file under "buttons" -- moves this ground out
 // from under an ink that goes on being painted on it regardless. Room is what a
@@ -423,12 +425,12 @@ func TestControlReadsAsAControlInEveryPreset(t *testing.T) {
 		name string
 		// lighterThanRow is which way this preset's idle button steps off its
 		// row: up, away from the palette floor, in dark; down, away from the
-		// ceiling, in light and quartz.
+		// ceiling, in sand and light.
 		lighterThanRow bool
 	}{
 		{"dark", true},
+		{"sand", false},
 		{"light", false},
-		{"quartz", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			th, err := Lookup(tc.name)
@@ -456,11 +458,11 @@ func TestControlReadsAsAControlInEveryPreset(t *testing.T) {
 // through CardHeaderResolved) read as two states at a glance.
 //
 // IT MEASURES APPEARANCE, NOT LUMINANCE, because luminance is what failed.
-// Quartz first shipped a slate Accent (#3a4250) over its slate Dim (#5f6673):
-// two hexes, 1.75:1 apart by contrast ratio -- MORE than dark's or light's
-// pair -- and in a real terminal a resolved comment could not be told from an
-// open one. Dark and light separate the pair by HUE (gold and rose against
-// grey), which contrastRatio cannot see: light's scores 1.13:1. CIELAB
+// Light first shipped, as quartz, a slate Accent (#3a4250) over its slate Dim
+// (#5f6673): two hexes, 1.75:1 apart by contrast ratio -- MORE than dark's or
+// sand's pair -- and in a real terminal a resolved comment could not be told
+// from an open one. Dark and sand separate the pair by HUE (gold and rose
+// against grey), which contrastRatio cannot see: sand's scores 1.13:1. CIELAB
 // distance sees both. The built-in presets sit near 50 and the rejected slate
 // at 15; the floor sits between them.
 func TestActiveAndResolvedAuthorsAreToldApart(t *testing.T) {
@@ -506,7 +508,7 @@ func TestSettingResolvesPresetsAndRefusesTheRest(t *testing.T) {
 	}{
 		{name: "dark"},
 		{name: "light"},
-		{name: "quartz"},
+		{name: "sand"},
 		{name: SystemName, wantNil: true},
 		{name: "harbor-dark", wantNil: true, wantErr: true},
 		{name: "", wantNil: true, wantErr: true},

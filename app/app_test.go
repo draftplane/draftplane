@@ -1087,12 +1087,12 @@ func TestComposeButtonRowMarksTheFocusedButton(t *testing.T) {
 // strips, the relocate header and the plan list's sort modal and rename prompt
 // are ONE style; driving the compose panel through the real paint path is what
 // proves that style reaches a screen, and theme's
-// TestPanelHeadIsDarksGoldAndLeavesLightWhereItWas is what pins the hex it
+// TestPanelHeadIsDarksGoldAndLeavesSandWhereItWas is what pins the hex it
 // carries. Repeating the walk for the other four would measure the same field
 // five times.
 //
-// LIGHT IS A CASE BECAUSE IT DID NOT MOVE. A change asked to touch one preset
-// is not tested by the preset it touched: the light row is what fails if the
+// SAND IS A CASE BECAUSE IT DID NOT MOVE. A change asked to touch one preset
+// is not tested by the preset it touched: the sand row is what fails if the
 // role is ever collapsed back onto a single shared token.
 func TestTheComposePanelHeadlineWearsThePanelHeadRole(t *testing.T) {
 	// The blue this headline used to wear. It is still in the palette as dark's
@@ -1104,7 +1104,7 @@ func TestTheComposePanelHeadlineWearsThePanelHeadRole(t *testing.T) {
 		want string
 	}{
 		{"dark", "38;2;226;163;86"}, // #e2a356
-		{"light", "38;2;0;105;159"}, // #00699f
+		{"sand", "38;2;0;105;159"},  // #00699f
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			th, err := theme.Lookup(tc.name)
