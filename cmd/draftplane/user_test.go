@@ -55,9 +55,10 @@ func TestRunUserGetPrintsAMintedNameAndIsStable(t *testing.T) {
 }
 
 // TestRunUserSetThenGetRoundTrips: setting a name and then reading it back
-// must yield exactly that name, and the set output must name the file it
-// wrote -- naming it is the whole discoverability point (theme_test.go's
-// TestRunThemeSetWritesAndConfirms makes the same assertion for theme.json).
+// must yield exactly that name, and the set output must be one line naming
+// the name and the file it wrote -- naming the file is the whole
+// discoverability point (theme_test.go's TestRunThemeSetWritesAndConfirms
+// makes the same assertion for theme.json).
 func TestRunUserSetThenGetRoundTrips(t *testing.T) {
 	path := userHome(t)
 
@@ -65,11 +66,8 @@ func TestRunUserSetThenGetRoundTrips(t *testing.T) {
 	if err := runUser(&setOut, []string{"luke"}); err != nil {
 		t.Fatalf("runUser set luke: %v", err)
 	}
-	if !strings.Contains(setOut.String(), "luke") {
-		t.Errorf("set output %q does not name the user name it set", setOut.String())
-	}
-	if !strings.Contains(setOut.String(), path) {
-		t.Errorf("set output %q does not name the file it wrote", setOut.String())
+	if want := "user name set to luke in " + path + "\n"; setOut.String() != want {
+		t.Errorf("set output = %q, want %q", setOut.String(), want)
 	}
 
 	var getOut bytes.Buffer
