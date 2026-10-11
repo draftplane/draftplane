@@ -9,9 +9,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
-	"unicode"
 
 	"github.com/draftplane/draftplane/client/identity"
 	"github.com/draftplane/draftplane/xdg"
@@ -170,18 +170,17 @@ func MachinePseudonym(path string) (string, error) {
 // collision (TestFormatAttributionBareLoginCollidesByDesign, ui/ui_test.go),
 // and namespacing it off was ruled out there.
 //
-// Refused: an empty or all-whitespace name, and a name containing a control
-// character, including a newline or tab -- the TUI would draw one as a
-// visible escape (ui/control.go), and no one means to type one.
+// Refused: an empty or all-whitespace name, and -- GitHub's own login rule,
+// so a mistyped flag like "-v" can never become a name -- anything outside
+// ASCII letters, digits, and a hyphen or space separator that may not lead,
+// trail or repeat, or that runs past 39 characters. This also rules out
+// every control character, newline and tab included: the TUI would draw one
+// as a visible escape (ui/control.go), and none of them are letters, digits
+// or the one separator this rule allows.
 func SetMachinePseudonym(path, name string) error {
 	name = strings.TrimSpace(name)
-	if name == "" {
-		return fmt.Errorf("config: name must not be empty")
-	}
-	if hasControlRune(name) {
-		// Describe the problem rather than printing name back: it is the
-		// control byte itself that must never reach a terminal.
-		return fmt.Errorf("config: name must not contain control characters")
+	if err := validateUserName(name); err != nil {
+		return err
 	}
 	return WithLock(path, func() error {
 		c, err := Load(path)
@@ -193,13 +192,25 @@ func SetMachinePseudonym(path, name string) error {
 	})
 }
 
-// hasControlRune reports whether s contains a rune unicode.IsControl
-// accepts: every C0 and C1 control code plus DEL, newline and tab included.
-func hasControlRune(s string) bool {
-	for _, r := range s {
-		if unicode.IsControl(r) {
-			return true
-		}
+// maxUserNameLength is GitHub's own login length cap.
+const maxUserNameLength = 39
+
+// userNamePattern is GitHub's login shape with space accepted anywhere a
+// hyphen is: runs of ASCII letters and digits, joined by single hyphen or
+// space separators that may not lead, trail or repeat.
+var userNamePattern = regexp.MustCompile(`^[A-Za-z0-9]+([ -][A-Za-z0-9]+)*$`)
+
+// validateUserName is the one rule SetMachinePseudonym enforces, run after
+// trimming. It is kept as a single function rather than several checks so
+// there is exactly one place that states the rule.
+func validateUserName(name string) error {
+	if name == "" {
+		return fmt.Errorf("config: name must not be empty")
 	}
-	return false
+	if len(name) > maxUserNameLength || !userNamePattern.MatchString(name) {
+		// Describe the rule rather than printing name back: a violation can
+		// be a raw control byte, which must never reach a terminal.
+		return fmt.Errorf("config: a user name may contain only letters, digits, and single hyphens or spaces between them, up to %d characters", maxUserNameLength)
+	}
+	return nil
 }

@@ -239,11 +239,11 @@ func TestLoadIgnoresAFieldItDoesNotKnow(t *testing.T) {
 }
 
 // TestSetMachinePseudonym pins the one validation rule SetMachinePseudonym
-// runs: trim surrounding whitespace, refuse an empty or all-whitespace name
-// and any control character (including a newline or tab -- the TUI would
-// draw one as a visible escape, ui/control.go), and otherwise accept the
-// name as given -- a `user-` or `agent-` prefix included, since a login that
-// collides with one is already an accepted collision
+// runs: trim surrounding whitespace, then allow only GitHub's login
+// characters -- ASCII letters, digits, and hyphen or space as a separator
+// that may not lead, trail or repeat -- up to 39 characters, and otherwise
+// accept the name as given -- a `user-` or `agent-` prefix included, since a
+// login that collides with one is already an accepted collision
 // (TestFormatAttributionBareLoginCollidesByDesign, ui/ui_test.go).
 func TestSetMachinePseudonym(t *testing.T) {
 	tests := []struct {
@@ -255,11 +255,25 @@ func TestSetMachinePseudonym(t *testing.T) {
 		{name: "plain name", input: "Luke", want: "Luke"},
 		{name: "surrounding whitespace is trimmed", input: "  Luke  ", want: "Luke"},
 		{name: "spaces inside are kept", input: "Luke Skywalker", want: "Luke Skywalker"},
+		{name: "hyphen inside", input: "luke-skywalker", want: "luke-skywalker"},
 		{name: "a user- prefix is kept verbatim", input: "user-calm-mountain", want: "user-calm-mountain"},
+		{name: "letter and digit", input: "a1", want: "a1"},
+		{name: "39 characters is the limit", input: strings.Repeat("a", 39), want: strings.Repeat("a", 39)},
 		{name: "empty", input: "", wantErr: true},
 		{name: "whitespace-only", input: "   ", wantErr: true},
 		{name: "newline", input: "Luke\nSkywalker", wantErr: true},
 		{name: "other control byte", input: "Luke\x07Skywalker", wantErr: true},
+		{name: "tab", input: "a\tb", wantErr: true},
+		{name: "leading hyphen looks like a flag", input: "-v", wantErr: true},
+		{name: "double hyphen looks like a flag", input: "--reset", wantErr: true},
+		{name: "trailing hyphen", input: "luke-", wantErr: true},
+		{name: "adjacent hyphens", input: "a--b", wantErr: true},
+		{name: "adjacent spaces", input: "a  b", wantErr: true},
+		{name: "space then hyphen then space", input: "a - b", wantErr: true},
+		{name: "underscore", input: "luke_s", wantErr: true},
+		{name: "dot", input: "luke.s", wantErr: true},
+		{name: "non-ASCII letter", input: "José", wantErr: true},
+		{name: "40 characters exceeds the limit", input: strings.Repeat("a", 40), wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

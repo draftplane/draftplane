@@ -94,6 +94,7 @@ func TestRunUserRefusals(t *testing.T) {
 		{name: "two arguments", args: []string{"Luke", "Skywalker"}, want: `unexpected argument "Skywalker"`},
 		{name: "empty", args: []string{""}, want: "name a user name"},
 		{name: "blank", args: []string{"   "}, want: "name a user name"},
+		{name: "flag-looking name", args: []string{"-v"}, want: "letters, digits"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
