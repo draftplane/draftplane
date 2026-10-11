@@ -147,7 +147,7 @@ func indexControl(s string) int {
 // benign row byte-identical.
 //
 // REVERSE VIDEO IS DERIVED FROM THE STYLE THE CALLER WAS GOING TO USE rather
-// than named as a colour of its own. It is legible in both presets and in none
+// than named as a colour of its own. It is legible in every preset and in none
 // -- a caller with a zero lipgloss.Style (plainProjection) still emits
 // `\x1b[7m`, which ansi.Strip takes back off, so the search index is a plain
 // string -- and style.Reverse(true) keeps the ZONE: every style in this package

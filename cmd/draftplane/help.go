@@ -33,7 +33,7 @@ type command struct {
 // nobody asks twice.
 var commands = []command{
 	{name: "review", form: "review [<path>|<plan id>]", summary: "review a plan by file path or plan id", help: reviewHelp},
-	{name: "theme", form: "theme [dark|light|system]", summary: "show or set the color theme", help: themeHelp},
+	{name: "theme", form: "theme [dark|light|quartz|system]", summary: "show or set the color theme", help: themeHelp},
 	{name: "mcp", form: "mcp [--list-tools]", summary: "command for agent stdio MCP server (add to agent config)", help: mcpHelp},
 	{name: "version", form: "version", summary: "print draftplane version", help: versionHelp},
 }
@@ -175,11 +175,12 @@ Examples
 const themeHelp = `draftplane theme — show or set the color theme
 
 Usage
-  draftplane theme [dark|light|system]
+  draftplane theme [dark|light|quartz|system]
 
 Arguments
   dark     set theme to dark
   light    set theme to light
+  quartz   set theme to quartz
   system   match terminal/system
 
 Options

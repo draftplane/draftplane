@@ -47,7 +47,7 @@ Draftplane works out of the box with no configuration. Just install and review a
 |---|---|
 | `draftplane` | see your plan list |
 | `draftplane review <path\|id>` | open a plan by file or by id |
-| `draftplane theme [dark\|light\|system]` | show or set the theme |
+| `draftplane theme [dark\|light\|quartz\|system]` | show or set the theme |
 | `draftplane mcp` | the stdio MCP server for your agent |
 | `draftplane version` | the installed version |
 
