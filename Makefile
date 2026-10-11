@@ -1,4 +1,4 @@
-.PHONY: check fmt vet lint test notices notices-check dist npm npm\:pack npm\:publish clean
+.PHONY: check fmt vet lint test notices notices-check dist npm npm\:pack npm\:publish npm\:publish\:dry clean
 
 # Run every gate the CI workflow used to run.
 # VERSION is the release identity stamped into the binary. `git describe`
@@ -129,6 +129,12 @@ npm\:pack:
 #   make npm:publish POLL_INTERVAL=15 POLL_TIMEOUT=1800
 npm\:publish:
 	@./scripts/publish-npm.sh
+
+# npm:publish:dry is npm:publish with nothing sent: the same tarball and
+# registry checks, then `npm publish --dry-run` for each package that would go
+# out, in the order it would. No login, no prompt, no wait.
+npm\:publish\:dry:
+	@DRY_RUN=1 ./scripts/publish-npm.sh
 
 # clean removes the build outputs and nothing else. The two paths are the ones
 # .gitignore already names, which is this repository's own standing answer to
