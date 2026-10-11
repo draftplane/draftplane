@@ -77,6 +77,8 @@ func run(args []string) error {
 		return runReview(args[1:])
 	case "theme":
 		return runTheme(os.Stdout, args[1:])
+	case "user":
+		return runUser(os.Stdout, args[1:])
 	case "mcp":
 		return runMCP(args[1:])
 	case "version":
@@ -284,12 +286,13 @@ func startWatch(statePath string) (<-chan struct{}, func()) {
 
 // pseudonymFallback is what resolvePseudonym reports when it cannot obtain this
 // machine's real one -- an unwritable or unreadable $XDG_CONFIG_HOME, say.
-// Rendered as "user-unknown-pseudonym" (ui.FormatAttribution), it is deliberately
-// not itself a plausible mint -- identity.MintPair's words are lowercase-
-// hyphenated adjective-noun pairs with no third segment -- so it never reads as
-// if this machine's real pseudonym merely happened to be dull, and deliberately
-// not blank: an agent-less write must still render as *something*.
-const pseudonymFallback = "unknown-pseudonym"
+// Rendered verbatim (ui.FormatAttribution), it is deliberately not itself a
+// plausible mint -- neither "unknown" nor "user" appears in
+// identity.MintPair's curated adjective or noun lists (client/identity/words.go)
+// -- so it never reads as if this machine's real pseudonym merely happened to
+// be dull, and deliberately not blank: an agent-less write must still render
+// as *something*.
+const pseudonymFallback = "unknown-user"
 
 // resolvePseudonym returns this machine's stable display pseudonym for a write
 // whose attribution names nobody, minting one under lock on first read

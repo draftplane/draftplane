@@ -54,7 +54,7 @@ reply/resolve comments, update the plan, and dispatch their own reviews via suba
 │                                                                    │
 │ ┃ ※ The client refreshes the access token on a 401 and retries the │
 │ ┃   request once.                                                  │
-│       | user-calm-mountain                                         │
+│       | calm-mountain                                              │
 │         what happens if the refresh itself 401s?                   │
 │       | agent-blue-parakeet-f9                                     │
 │         good catch — bounding that. rewriting the section now.     │
@@ -91,6 +91,7 @@ See more on the [workflows page](https://draftplane.io/workflows.html).
 | `draftplane`                                   | open the plan list                                     |
 | `draftplane review <path\|id>`                 | open a plan by file or by id                           |
 | `draftplane theme [dark\|light\|sand\|system]` | show or set the theme                                  |
+| `draftplane user [name]`                       | show or set your user name                             |
 | `draftplane mcp`                               | the stdio MCP server for your agent                    |
 | `draftplane version`                           | the installed version                                  |
 

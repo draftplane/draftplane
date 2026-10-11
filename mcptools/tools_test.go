@@ -125,8 +125,11 @@ func ctxAs(actorDisplay string) context.Context {
 // attrLogin is the ActorLogin every fixture in this file pairs with a display
 // name, and it guarantees the two are never the same string.
 //
-// Its output holds only [a-z0-9-], so it cannot spell ui.FormatAttribution's
-// agent composite or a "user-<pseudonym>" fallback.
+// Its output holds only [a-z0-9-] and always ends in "-codes", so it cannot
+// spell ui.FormatAttribution's agent composite or this machine's pseudonym:
+// no fixture pseudonym in this package's tests (e.g. "calm-mountain"), nor
+// identity.MintPair's output, nor pseudonymFallback ("unknown-user"), ends
+// in "-codes".
 //
 // The result DIFFERS from its input by construction rather than by inspection of
 // today's callers: the mapping is length-preserving in runes, so a mapped string
@@ -393,7 +396,7 @@ func TestGetReviewAuthorAllFourAttributionShapes(t *testing.T) {
 	// paints, which is the login.
 	want := []string{
 		"dana-loves-coding",
-		"user-calm-mountain",
+		"calm-mountain",
 		"agent-blue-parakeet-f9 ● dana-loves-coding",
 		"agent-blue-parakeet-f9",
 	}

@@ -9,6 +9,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"syscall"
 
 	"github.com/draftplane/draftplane/client/identity"
@@ -19,9 +21,10 @@ import (
 //
 // MachinePseudonym is the stable name a human writes under on this machine --
 // a curated word pair with no suffix (identity.MintPair), e.g.
-// "calm-mountain", rendered "user-calm-mountain". Minted once, by
+// "calm-mountain", rendered exactly as stored. Minted once, by
 // MachinePseudonym the function in this package, and reused for the life of
-// this config file; empty until that first read.
+// this config file; empty until that first read. `draftplane user` can set it
+// to anything.
 //
 // A field this build does not know is ignored on Load rather than refused, so
 // a config.json carrying one still yields its pseudonym.
@@ -154,4 +157,60 @@ func MachinePseudonym(path string) (string, error) {
 		return nil
 	})
 	return pseudonym, err
+}
+
+// SetMachinePseudonym sets this machine's pseudonym at path to name, running
+// Load, the assignment and Save inside WithLock -- the same cycle
+// MachinePseudonym uses, so this cannot race a first-run mint in another TUI
+// or MCP process.
+//
+// name is trimmed and stored verbatim otherwise: nothing else about it is
+// rewritten, and a leading "user-" or "agent-" is accepted rather than
+// refused -- a login that collides with one is already an accepted
+// collision (TestFormatAttributionBareLoginCollidesByDesign, ui/ui_test.go),
+// and namespacing it off was ruled out there.
+//
+// Refused: an empty or all-whitespace name, and -- GitHub's own login rule,
+// so a mistyped flag like "-v" can never become a name -- anything outside
+// ASCII letters, digits, and a hyphen or space separator that may not lead,
+// trail or repeat, or that runs past 39 characters. This also rules out
+// every control character, newline and tab included: the TUI would draw one
+// as a visible escape (ui/control.go), and none of them are letters, digits,
+// or either separator this rule allows.
+func SetMachinePseudonym(path, name string) error {
+	name = strings.TrimSpace(name)
+	if err := validateUserName(name); err != nil {
+		return err
+	}
+	return WithLock(path, func() error {
+		c, err := Load(path)
+		if err != nil {
+			return err
+		}
+		c.MachinePseudonym = name
+		return Save(path, c)
+	})
+}
+
+// maxUserNameLength is GitHub's own login length cap.
+const maxUserNameLength = 39
+
+// userNamePattern is GitHub's login shape with space accepted anywhere a
+// hyphen is: runs of ASCII letters and digits, joined by single hyphen or
+// space separators that may not lead, trail or repeat.
+var userNamePattern = regexp.MustCompile(`^[A-Za-z0-9]+([ -][A-Za-z0-9]+)*$`)
+
+// validateUserName is the one rule SetMachinePseudonym enforces, run after
+// trimming. It is kept as a single function rather than several checks so
+// there is exactly one place that states the rule.
+func validateUserName(name string) error {
+	if name == "" {
+		return fmt.Errorf("config: name must not be empty")
+	}
+	if len(name) > maxUserNameLength || !userNamePattern.MatchString(name) {
+		// Describe the rule rather than printing name back: a violation can
+		// be a raw control byte, which must never reach a terminal.
+		return fmt.Errorf("config: a user name may contain only letters, digits, and single hyphens or spaces between them, up to %d characters", maxUserNameLength)
+	}
+	return nil
 }

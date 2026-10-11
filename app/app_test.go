@@ -67,9 +67,10 @@ func attrCtx(actorDisplay string) context.Context {
 // attrLogin is the ActorLogin every fixture in this file pairs with a display
 // name, and it guarantees the two are never the same string: the rune mapping
 // is length-preserving, so a mapped string plus a non-empty suffix can never
-// equal its own input, whatever the caller passes. Its output holds only
-// [a-z0-9-], so it cannot spell ui.FormatAttribution's agent composite or a
-// "user-<pseudonym>" fallback.
+// equal its own input, whatever the caller passes. Its output always ends in
+// "-codes", and no fixture pseudonym in this package's tests — nor
+// identity.MintPair's output, nor pseudonymFallback ("unknown-user") — ends
+// in "-codes", so a fixture login can never spell a pseudonym.
 func attrLogin(actorDisplay string) string {
 	return strings.Map(func(r rune) rune {
 		switch {
