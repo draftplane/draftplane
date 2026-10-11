@@ -9,7 +9,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
+	"unicode"
 
 	"github.com/draftplane/draftplane/client/identity"
 	"github.com/draftplane/draftplane/xdg"
@@ -154,4 +156,49 @@ func MachinePseudonym(path string) (string, error) {
 		return nil
 	})
 	return pseudonym, err
+}
+
+// SetMachinePseudonym sets this machine's pseudonym at path to name, running
+// Load, the assignment and Save inside WithLock -- the same cycle
+// MachinePseudonym uses, so this cannot race a first-run mint in another TUI
+// or MCP process.
+//
+// name is trimmed and stored verbatim otherwise: nothing else about it is
+// rewritten, and a leading "user-" or "agent-" is accepted rather than
+// refused -- a login that collides with one is already an accepted
+// collision (TestFormatAttributionBareLoginCollidesByDesign, ui/ui_test.go),
+// and namespacing it off was ruled out there.
+//
+// Refused: an empty or all-whitespace name, and a name containing a control
+// character, including a newline or tab -- the TUI would draw one as a
+// visible escape (ui/control.go), and no one means to type one.
+func SetMachinePseudonym(path, name string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return fmt.Errorf("config: name must not be empty")
+	}
+	if hasControlRune(name) {
+		// Describe the problem rather than printing name back: it is the
+		// control byte itself that must never reach a terminal.
+		return fmt.Errorf("config: name must not contain control characters")
+	}
+	return WithLock(path, func() error {
+		c, err := Load(path)
+		if err != nil {
+			return err
+		}
+		c.MachinePseudonym = name
+		return Save(path, c)
+	})
+}
+
+// hasControlRune reports whether s contains a rune unicode.IsControl
+// accepts: every C0 and C1 control code plus DEL, newline and tab included.
+func hasControlRune(s string) bool {
+	for _, r := range s {
+		if unicode.IsControl(r) {
+			return true
+		}
+	}
+	return false
 }
