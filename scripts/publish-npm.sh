@@ -20,6 +20,11 @@
 #
 # It publishes the TARBALLS, not the directories, so what ships is exactly what
 # `make npm:pack` produced and what a local install was tested against.
+#
+# DRY_RUN=1 (`make npm:publish:dry`) runs the same checks and the same registry
+# lookups, then hands each pending tarball to `npm publish --dry-run`, which
+# validates and lists it without uploading. It needs no npm session, asks
+# nothing, and skips the wait: nothing was published, so nothing will resolve.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -30,6 +35,7 @@ PKG="draftplane"
 PLATFORMS=(darwin-arm64 darwin-x64 linux-arm64 linux-x64)
 POLL_INTERVAL=${POLL_INTERVAL:-30}
 POLL_TIMEOUT=${POLL_TIMEOUT:-1200}
+DRY_RUN=${DRY_RUN:-}
 
 # The version comes from the ASSEMBLED WRAPPER, for the reason pack-npm.sh
 # gives: publish what is on disk, not what the tree would produce now.
@@ -56,7 +62,7 @@ plan() {
   echo "  $1"
 }
 
-echo "publishing $VERSION:"
+if [ -n "$DRY_RUN" ]; then echo "dry run, publishing $VERSION:"; else echo "publishing $VERSION:"; fi
 PENDING=()
 for p in "${PLATFORMS[@]}"; do
   plan "$SCOPE/$PKG-$p" && PENDING+=("$(platform_tgz "$p")")
@@ -66,6 +72,21 @@ plan "$PKG" && WRAPPER_PENDING=true
 
 if [ ${#PENDING[@]} -eq 0 ] && ! $WRAPPER_PENDING; then
   echo "nothing to publish"; exit 0
+fi
+
+if [ -n "$DRY_RUN" ]; then
+  # Same order as the real run, so the dry run shows the sequence that ships.
+  if [ ${#PENDING[@]} -gt 0 ]; then
+    for t in "${PENDING[@]}"; do
+      npm publish "$t" --access public --dry-run
+    done
+  fi
+  echo "would wait for all ${#PLATFORMS[@]} platform packages to resolve at $VERSION"
+  if $WRAPPER_PENDING; then
+    npm publish "$WRAPPER_TGZ" --dry-run
+  fi
+  echo "dry run complete, nothing published"
+  exit 0
 fi
 
 # Login comes after the check above because npm view needs no session, so a
