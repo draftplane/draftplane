@@ -95,6 +95,13 @@ See more on the [workflows page](https://draftplane.io/workflows.html).
 | `draftplane mcp`                               | the stdio MCP server for your agent                    |
 | `draftplane version`                           | the installed version                                  |
 
+## Development
+
+    `make vet`
+    `make test`
+    `make build`
+    `./bin draftplane`
+
 Draftplane is free and licensed under the [MIT license](https://github.com/draftplane/draftplane/blob/main/LICENSE)
 
 [draftplane.io](https://draftplane.io)
