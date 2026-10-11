@@ -588,14 +588,14 @@ var composeButtonBar = []struct {
 // the row a keystroke would act on. Control is that same button at rest, a step
 // off the button row in whichever direction its preset leaves free, so it reads
 // as an unpressed control rather than as more panel. Dim ink was the obvious
-// idle choice and falls under AA in dark and light, where Text clears AA on
+// idle choice and falls under AA in dark and sand, where Text clears AA on
 // every Control ground -- which is why Control needs no ink token beside it.
 //
 // IT WAS Field UNTIL A HUMAN DROVE IT ON A REAL TERMINAL. Field is a step DOWN
 // from its surroundings in every preset, which is right for a text input and
-// right in light here by luck of where light's row sits -- but in dark it lands
+// right in sand here by luck of where sand's row sits -- but in dark it lands
 // near the palette floor and the two buttons read as gaps in the line rather
-// than as controls. Light kept its byte-for-byte rendering through the fix;
+// than as controls. Sand kept its byte-for-byte rendering through the fix;
 // theme.Control carries the argument for why the fix had to be a token.
 //
 // THE PAD GOES THROUGH padRightIn AND NEVER BARE SPACES: a nested Render ends in
