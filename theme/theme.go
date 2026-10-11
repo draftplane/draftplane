@@ -4,7 +4,7 @@
 // needs a partial-theme check -- but Setting and Load return a *Theme a caller
 // must test, because of the one setting that resolves to no palette at all.
 //
-// There are three PALETTES, "dark", "light" and "quartz", and Lookup answers
+// There are three PALETTES, "dark", "light" and "sand", and Lookup answers
 // only those.
 // "system" belongs to a different vocabulary: it is a SETTING, a legal value of
 // theme.json's "theme" key meaning "no preset chosen, match the terminal".
@@ -39,12 +39,12 @@ type Theme struct {
 	// Heading colours EVERY heading, sigil and words alike, at every level.
 	//
 	// The presets assign the roles differently, deliberately: dark spends rose
-	// on identity and position and bronze on state, light a cerulean on
-	// identity and a rose on state, and quartz one raspberry on both. A role is
-	// a role in every preset; which hue fills it is a question about the ground
-	// it sits on.
+	// on identity and position and bronze on state, sand a cerulean on identity
+	// and a rose on state, and light one raspberry on both. A role is a role in
+	// every preset; which hue fills it is a question about the ground it sits
+	// on.
 	//
-	// In the dark and quartz presets it holds the SAME VALUE as Brand, and the
+	// In the dark and light presets it holds the SAME VALUE as Brand, and the
 	// two stay separate tokens: collapsing them would silently move every
 	// heading the next time the cursor's colour is retuned.
 	Heading string
@@ -55,9 +55,9 @@ type Theme struct {
 	// sits under the input rather than at the top of the body.
 	//
 	// It is a role of its own because no other token is rose in EVERY preset:
-	// it is Heading/Brand in dark and quartz and Accent in light. Dark's
+	// it is Heading/Brand in dark and light and Accent in sand. Dark's
 	// Heading, Brand and Warn happen to hold the identical value today, and in
-	// quartz PanelHead and Accent hold it too; that is a fact about today's
+	// light PanelHead and Accent hold it too; that is a fact about today's
 	// values, not a promise, and sharing a token would drag this headline's
 	// colour along the next time one of them is retuned.
 	Warn string
@@ -79,18 +79,18 @@ type Theme struct {
 	//
 	// IT IS A ROLE OF ITS OWN FOR Warn's OWN REASON. The product's own site
 	// inks this line in Accent (its own amber) and the TUI inked it in Focus;
-	// matching the site IN DARK WITHOUT MOVING LIGHT is a pair no standing role
-	// holds. Accent is that gold in dark and ROSE in light (#a8386c, Warn's own
-	// value); Focus is the cerulean light already drew and the blue in dark the
-	// match removes. So dark carries Accent's hex and light carries Focus's, and
+	// matching the site IN DARK WITHOUT MOVING SAND is a pair no standing role
+	// holds. Accent is that gold in dark and ROSE in sand (#a8386c, Warn's own
+	// value); Focus is the cerulean sand already drew and the blue in dark the
+	// match removes. So dark carries Accent's hex and sand carries Focus's, and
 	// NEITHER TOKEN IS READ TO GET THEM: retuning the thread card's author line
 	// must not drag a panel's headline along behind it.
 	//
-	// QUARTZ CARRIES Warn's RASPBERRY, which makes its two panel inks one
+	// LIGHT CARRIES Warn's RASPBERRY, which makes its two panel inks one
 	// colour. The mode gate above is what allows it, and it was chosen in the
 	// app over a slate headline. It costs one test:
 	// TestTheCentredPanelBorderIsOneColourAndItsHeadIsWarn tells the two inks
-	// apart by colour and so runs on dark and light only.
+	// apart by colour and so runs on dark and sand only.
 	PanelHead string
 	// Field is the ground a TEXT INPUT sits on inside a panel (app.centredBox's
 	// inkField) -- the re-point panes on both doors today.
@@ -98,7 +98,7 @@ type Theme struct {
 	// It holds StatusBar's value in every preset but stays a separate token:
 	// retuning the status bar should not move a panel's input field. Strip is
 	// not reused for it because Strip sits only three units off Chrome in
-	// light, which is invisible on a real terminal; a role has to answer in
+	// sand, which is invisible on a real terminal; a role has to answer in
 	// every preset.
 	Field string
 	// Control is the ground a PANEL CONTROL AT REST sits on -- a button nobody
@@ -108,8 +108,8 @@ type Theme struct {
 	//
 	// THE PRESETS STEP OFF THEIR ROW IN OPPOSITE DIRECTIONS, and that is the
 	// whole reason this token exists rather than the compose panel reusing
-	// Field. An idle button sits on the button row, which is Strip. Light's and
-	// quartz's Control is DARKER than Strip and reads as a raised band; dark's
+	// Field. An idle button sits on the button row, which is Strip. Sand's and
+	// light's Control is DARKER than Strip and reads as a raised band; dark's
 	// is LIGHTER than Strip, because dark's row is already close to the
 	// palette's floor and one more step down reads as a hole punched through
 	// the row rather than as a button. Field is a step down in every preset,
@@ -120,8 +120,8 @@ type Theme struct {
 	// 1.44:1 off the same row.
 	//
 	// IT CARRIES NO INK TOKEN OF ITS OWN, unlike Chip/ChipText: Text clears
-	// WCAG AA on every preset's ground (6.0:1 dark, 9.6:1 light, 13.6:1
-	// quartz), so the button's label is the same ink as the panel around it.
+	// WCAG AA on every preset's ground (6.0:1 dark, 9.6:1 sand, 13.6:1
+	// light), so the button's label is the same ink as the panel around it.
 	// What fails if a retune takes either fact away is
 	// TestControlReadsAsAControlInEveryPreset.
 	Control string
@@ -136,7 +136,7 @@ type Theme struct {
 	// still calls the panel headline's style FocusHeader: every panel's leading
 	// line was inked in Focus, so in dark the headline and the
 	// armed button were one blue, a foreground and a ground of the same value.
-	// Matching the product's site broke that pairing in dark; in light the two hexes
+	// Matching the product's site broke that pairing in dark; in sand the two hexes
 	// coincide anyway and nothing moved. NO STYLE READS THIS TOKEN DIRECTLY
 	// TODAY -- Chip's own value is what paints.
 	Focus      string
@@ -177,31 +177,6 @@ var presets = map[string]*Theme{
 		CodeBg:     "#1b2129",
 	},
 	"light": {
-		Rail:       "#e0d3b4",
-		Chrome:     "#f0e7d2",
-		Doc:        "#f9f2e0",
-		Text:       "#2e2a21",
-		Dim:        "#6f6a5c",
-		Brand:      "#00699f",
-		Heading:    "#00699f",
-		Warn:       "#a8386c",
-		PanelHead:  "#00699f",
-		Field:      "#e0d3b4",
-		Control:    "#e0d3b4",
-		Card:       "#f1e9d5",
-		Accent:     "#a8386c",
-		Strip:      "#ede4d0",
-		Focus:      "#00699f",
-		StatusBar:  "#e0d3b4",
-		StatusText: "#4a443a",
-		Chip:       "#00699f",
-		ChipText:   "#f9f2e0",
-		OK:         "#00699f",
-		Badge:      "#6f6a5c",
-		Code:       "#5f4a12",
-		CodeBg:     "#f9f2e0",
-	},
-	"quartz": {
 		Rail:       "#f3f6f9",
 		Chrome:     "#eef2f6",
 		Doc:        "#ffffff",
@@ -225,6 +200,31 @@ var presets = map[string]*Theme{
 		Badge:      "#5f6673",
 		Code:       "#a8386c",
 		CodeBg:     "#ffffff",
+	},
+	"sand": {
+		Rail:       "#e0d3b4",
+		Chrome:     "#f0e7d2",
+		Doc:        "#f9f2e0",
+		Text:       "#2e2a21",
+		Dim:        "#6f6a5c",
+		Brand:      "#00699f",
+		Heading:    "#00699f",
+		Warn:       "#a8386c",
+		PanelHead:  "#00699f",
+		Field:      "#e0d3b4",
+		Control:    "#e0d3b4",
+		Card:       "#f1e9d5",
+		Accent:     "#a8386c",
+		Strip:      "#ede4d0",
+		Focus:      "#00699f",
+		StatusBar:  "#e0d3b4",
+		StatusText: "#4a443a",
+		Chip:       "#00699f",
+		ChipText:   "#f9f2e0",
+		OK:         "#00699f",
+		Badge:      "#6f6a5c",
+		Code:       "#5f4a12",
+		CodeBg:     "#f9f2e0",
 	},
 }
 

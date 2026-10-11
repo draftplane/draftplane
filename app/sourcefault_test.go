@@ -863,12 +863,12 @@ func TestTheCentredPanelAddsNoRowThroughTheRealDoor(t *testing.T) {
 // reworded headline or a changed width that stopped exercising the wrap goes
 // red rather than quietly measuring the one-row case twice.
 func TestTheCentredPanelBorderIsOneColourAndItsHeadIsWarn(t *testing.T) {
-	// Not theme.Names(): quartz spends one raspberry on Warn and PanelHead, so
+	// Not theme.Names(): light spends one raspberry on Warn and PanelHead, so
 	// the guard below could not tell its head from a FocusHeader revert. Dark
-	// and light hold the two roles apart, and the box reads its tokens the same
+	// and sand hold the two roles apart, and the box reads its tokens the same
 	// way whatever their values; the mode gate (theme.PanelHead) keeps the two
 	// inks off one screen.
-	for _, name := range []string{"dark", "light"} {
+	for _, name := range []string{"dark", "sand"} {
 		th, err := theme.Lookup(name)
 		if err != nil {
 			t.Fatal(err)
@@ -2579,8 +2579,8 @@ func TestTheDeleteConfirmIsTheSameBoxPanel1WasIn(t *testing.T) {
 // this file runs on a stripped frame, and a stripped frame cannot show a colour
 // bug -- the two-colour border survived the whole suite that way. One preset is
 // not enough for a ground either: theme.Strip is a step that reads in dark and
-// THREE UNITS in light, which is why the field got a role of its own, and a
-// one-preset test would pass on a version with no visible band at all in light.
+// THREE UNITS in sand, which is why the field got a role of its own, and a
+// one-preset test would pass on a version with no visible band at all in sand.
 //
 // THE ANTI-VACUITY CHECK IS THE FIRST ASSERTION. If Field and Chrome ever hold
 // one value the band disappears and every assertion below still passes, so the

@@ -107,7 +107,7 @@ type Styles struct {
 	//
 	// IT IS theme.Field AND NOT theme.Strip, for a measured reason rather than
 	// a symmetrical one: Strip is a step that reads in dark and THREE UNITS in
-	// light, so reusing it would have drawn a band in one preset and nothing at
+	// sand, so reusing it would have drawn a band in one preset and nothing at
 	// all in the other.
 	//
 	// IT IS THE ONE STYLE HERE THAT DOES NOT CARRY THE CHROME BACKGROUND, and
@@ -138,7 +138,7 @@ type Styles struct {
 	// rather than as more panel.
 	//
 	// IT IS theme.Control AND NOT theme.Field, and the difference only shows in
-	// dark: they hold the same hex in light and quartz, and the idle button
+	// dark: they hold the same hex in sand and light, and the idle button
 	// rendered through Field until someone drove it on a real terminal. In dark,
 	// Field's step is DOWNWARD from a row already near the palette floor and
 	// the two buttons read as gaps in the line rather than as controls.
