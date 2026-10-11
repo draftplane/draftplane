@@ -84,8 +84,10 @@ func attrCtx(actorDisplay string) context.Context {
 // attrLogin is the ActorLogin every fixture in this file pairs with a display
 // name, and it guarantees the two are never the same string.
 //
-// Its output holds only [a-z0-9-], so it cannot spell ui.FormatAttribution's
-// agent composite or a "user-<pseudonym>" fallback.
+// Its output holds only [a-z0-9-] and always ends in "-codes", so it cannot
+// spell ui.FormatAttribution's agent composite or this machine's pseudonym:
+// no pseudonym this build ever renders -- minted or the fallback -- ends in
+// "-codes".
 //
 // The result DIFFERS from its input by construction rather than by inspection of
 // today's callers: the mapping is length-preserving in runes, so a mapped string

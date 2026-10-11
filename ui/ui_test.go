@@ -6104,7 +6104,7 @@ func attributionCases() []struct {
 		want string
 	}{
 		{"author, no agent", domain.Attribution{ActorID: "u1", ActorLogin: "dana-loves-coding", ActorDisplay: "danaLovesCoding"}, "dana-loves-coding"},
-		{"neither author nor agent", domain.Attribution{}, "user-calm-mountain"},
+		{"neither author nor agent", domain.Attribution{}, "calm-mountain"},
 		{"author and agent", domain.Attribution{ActorID: "u1", ActorLogin: "dana-loves-coding", ActorDisplay: "danaLovesCoding", Agent: "blue-parakeet-f9"}, "agent-blue-parakeet-f9 ● dana-loves-coding"},
 		{"agent, no author", domain.Attribution{Agent: "blue-parakeet-f9"}, "agent-blue-parakeet-f9"},
 		{"author with no login", domain.Attribution{ActorID: "u1"}, "u1"},
@@ -6197,7 +6197,7 @@ func TestFormatAttributionBareLoginCollidesByDesign(t *testing.T) {
 		},
 		{
 			name:    "OPEN BY RULING: a login may spell this machine's pseudonym",
-			hostile: domain.Attribution{ActorID: "u1", ActorLogin: "user-" + pseudonym, ActorDisplay: "Quiet Otter"},
+			hostile: domain.Attribution{ActorID: "u1", ActorLogin: pseudonym, ActorDisplay: "Quiet Otter"},
 			genuine: domain.Attribution{},
 		},
 	} {

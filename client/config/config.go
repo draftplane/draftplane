@@ -21,9 +21,10 @@ import (
 //
 // MachinePseudonym is the stable name a human writes under on this machine --
 // a curated word pair with no suffix (identity.MintPair), e.g.
-// "calm-mountain", rendered "user-calm-mountain". Minted once, by
+// "calm-mountain", rendered exactly as stored. Minted once, by
 // MachinePseudonym the function in this package, and reused for the life of
-// this config file; empty until that first read.
+// this config file; empty until that first read. `draftplane user` can set it
+// to anything.
 //
 // A field this build does not know is ignored on Load rather than refused, so
 // a config.json carrying one still yields its pseudonym.

@@ -68,8 +68,10 @@ func attrCtx(actorDisplay string) context.Context {
 // name, and it guarantees the two are never the same string: the rune mapping
 // is length-preserving, so a mapped string plus a non-empty suffix can never
 // equal its own input, whatever the caller passes. Its output holds only
-// [a-z0-9-], so it cannot spell ui.FormatAttribution's agent composite or a
-// "user-<pseudonym>" fallback.
+// [a-z0-9-] and always ends in "-codes", so it cannot spell
+// ui.FormatAttribution's agent composite or this machine's pseudonym: no
+// pseudonym this build ever renders -- minted or the fallback -- ends in
+// "-codes".
 func attrLogin(actorDisplay string) string {
 	return strings.Map(func(r rune) rune {
 		switch {

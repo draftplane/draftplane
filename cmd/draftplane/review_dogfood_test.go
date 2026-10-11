@@ -360,7 +360,7 @@ func testHumanAgentLoop(t *testing.T, cs *mcp.ClientSession, dir string, machine
 		t.Fatalf("buildDeps: %v", err)
 	}
 	assertOwnMachine(t, machine, statePath, pseudonym)
-	t.Logf("buildDeps(): statePath=%s pseudonym=%s (every human write below carries an empty attribution and renders as user-%s)", statePath, pseudonym, pseudonym)
+	t.Logf("buildDeps(): statePath=%s pseudonym=%s (every human write below carries an empty attribution and renders as %s)", statePath, pseudonym, pseudonym)
 
 	// Decorated with the empty attribution runReview and runList hand app,
 	// which is what app stamps on every context it originates
@@ -408,8 +408,8 @@ func testHumanAgentLoop(t *testing.T, cs *mcp.ClientSession, dir string, machine
 		t.Fatalf("get_review threads = %d, want 2", len(review.Threads))
 	}
 	for _, th := range review.Threads {
-		if th.Comments[0].Author != "user-"+pseudonym {
-			t.Fatalf("thread %s author = %q, want %q (the human's comments must read as the machine pseudonym)", th.ID, th.Comments[0].Author, "user-"+pseudonym)
+		if th.Comments[0].Author != pseudonym {
+			t.Fatalf("thread %s author = %q, want %q (the human's comments must read as the machine pseudonym)", th.ID, th.Comments[0].Author, pseudonym)
 		}
 	}
 

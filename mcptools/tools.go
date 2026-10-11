@@ -489,7 +489,7 @@ type ReviewComment struct {
 	// Author is the composite string the TUI renders: an agent identity, a
 	// human's login (domain.Attribution.ActorLogin), both
 	// ("agent-blue-parakeet-f9 ● dana-loves-coding" -- the agent acting for
-	// that human), or this machine's pseudonym when neither is known. See
+	// that human), or this machine's user name when neither is known. See
 	// ui.FormatAttribution. Nothing in this build writes ActorLogin, so a
 	// login appears only on a review fact whose recorded Attribution already
 	// carries one.
@@ -498,7 +498,7 @@ type ReviewComment struct {
 	// because an agent relaying this string is the reader most likely to hand
 	// it to a human as "who said this": a display name is free text its owner
 	// may set to another person's.
-	Author    string `json:"author" jsonschema:"who wrote this: an agent identity, a human's login, \"agent ● login\" when an agent wrote it on a human's behalf, or a machine pseudonym when neither is known"`
+	Author    string `json:"author" jsonschema:"who wrote this: an agent identity, a human's login, \"agent ● login\" when an agent wrote it on a human's behalf, or this machine's user name when neither is known"`
 	Body      string `json:"body"`
 	CreatedAt string `json:"created_at"`
 }

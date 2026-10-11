@@ -54,7 +54,7 @@ reply/resolve comments, update the plan, and dispatch their own reviews via suba
 │                                                                    │
 │ ┃ ※ The client refreshes the access token on a 401 and retries the │
 │ ┃   request once.                                                  │
-│       | user-calm-mountain                                         │
+│       | calm-mountain                                              │
 │         what happens if the refresh itself 401s?                   │
 │       | agent-blue-parakeet-f9                                     │
 │         good catch — bounding that. rewriting the section now.     │

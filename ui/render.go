@@ -363,7 +363,7 @@ func FormatAttribution(a domain.Attribution, pseudonym string) string {
 	case author != "":
 		return author
 	default:
-		return "user-" + pseudonym
+		return pseudonym
 	}
 }
 
