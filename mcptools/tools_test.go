@@ -127,9 +127,9 @@ func ctxAs(actorDisplay string) context.Context {
 //
 // Its output holds only [a-z0-9-] and always ends in "-codes", so it cannot
 // spell ui.FormatAttribution's agent composite or this machine's pseudonym:
-// no pseudonym this build ever renders -- minted or the fallback -- ends in
-// "-codes", and this file's own fixture pseudonym ("calm-mountain") does not
-// either.
+// no fixture pseudonym in this package's tests (e.g. "calm-mountain"), nor
+// identity.MintPair's output, nor pseudonymFallback ("unknown-user"), ends
+// in "-codes".
 //
 // The result DIFFERS from its input by construction rather than by inspection of
 // today's callers: the mapping is length-preserving in runes, so a mapped string

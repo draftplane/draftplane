@@ -270,6 +270,7 @@ func TestSetMachinePseudonym(t *testing.T) {
 		{name: "adjacent hyphens", input: "a--b", wantErr: true},
 		{name: "adjacent spaces", input: "a  b", wantErr: true},
 		{name: "space then hyphen then space", input: "a - b", wantErr: true},
+		{name: "hyphen then space", input: "a- b", wantErr: true},
 		{name: "underscore", input: "luke_s", wantErr: true},
 		{name: "dot", input: "luke.s", wantErr: true},
 		{name: "non-ASCII letter", input: "José", wantErr: true},

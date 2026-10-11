@@ -175,8 +175,8 @@ func MachinePseudonym(path string) (string, error) {
 // ASCII letters, digits, and a hyphen or space separator that may not lead,
 // trail or repeat, or that runs past 39 characters. This also rules out
 // every control character, newline and tab included: the TUI would draw one
-// as a visible escape (ui/control.go), and none of them are letters, digits
-// or the one separator this rule allows.
+// as a visible escape (ui/control.go), and none of them are letters, digits,
+// or either separator this rule allows.
 func SetMachinePseudonym(path, name string) error {
 	name = strings.TrimSpace(name)
 	if err := validateUserName(name); err != nil {

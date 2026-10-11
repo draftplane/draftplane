@@ -81,8 +81,10 @@ func TestRunUserSetThenGetRoundTrips(t *testing.T) {
 	}
 }
 
-// TestRunUserRefusals covers the arguments that must never reach
-// config.SetMachinePseudonym: too many words, and an empty or blank one. A
+// TestRunUserRefusals covers two kinds of refusal: arguments that must
+// never reach config.SetMachinePseudonym (too many words, and an empty or
+// blank one), and a flag-looking name ("-v") that does reach
+// config.SetMachinePseudonym and is refused there by the name rule. A
 // refusal must also touch no file -- a command that errors out has no
 // business minting a pseudonym nobody asked for.
 func TestRunUserRefusals(t *testing.T) {
