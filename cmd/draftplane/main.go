@@ -77,6 +77,8 @@ func run(args []string) error {
 		return runReview(args[1:])
 	case "theme":
 		return runTheme(os.Stdout, args[1:])
+	case "user":
+		return runUser(os.Stdout, args[1:])
 	case "mcp":
 		return runMCP(args[1:])
 	case "version":

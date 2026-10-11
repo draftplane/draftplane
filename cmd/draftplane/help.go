@@ -28,12 +28,14 @@ type command struct {
 
 // commands is in the order the root page lists them, which is the order a
 // person meets them rather than alphabetical: review is what the product is
-// for, theme is the one row that changes nothing but this machine's own
-// comfort, mcp is the other audience entirely, and version answers a question
-// nobody asks twice.
+// for; theme and user come next because both are this machine's own
+// settings, changing nothing but the color it paints with and the name it
+// writes under; mcp is the other audience entirely, and version answers a
+// question nobody asks twice.
 var commands = []command{
 	{name: "review", form: "review [<path>|<plan id>]", summary: "review a plan by file path or plan id", help: reviewHelp},
 	{name: "theme", form: "theme [dark|light|quartz|system]", summary: "show or set the color theme", help: themeHelp},
+	{name: "user", form: "user [name]", summary: "set your user name for review comments and activity", help: userHelp},
 	{name: "mcp", form: "mcp [--list-tools]", summary: "command for agent stdio MCP server (add to agent config)", help: mcpHelp},
 	{name: "version", form: "version", summary: "print draftplane version", help: versionHelp},
 }
@@ -189,6 +191,22 @@ Options
 Examples
   draftplane theme            show current theme
   draftplane theme light      set the light theme
+`
+
+const userHelp = `draftplane user — show or set your user name
+
+Usage
+  draftplane user [name]
+
+Arguments
+  name     the user name to use for comments and review activity
+
+Options
+  --help   print this help
+
+Examples
+  draftplane user             show current user name
+  draftplane user alice       set the user name to alice
 `
 
 const mcpHelp = `draftplane mcp — agent stdio MCP server (add to agent config)

@@ -91,6 +91,7 @@ See more on the [workflows page](https://draftplane.io/workflows.html).
 | `draftplane`                                     | open the plan list                                   |
 | `draftplane review <path\|id>`                   | open a plan by file or by id                         |
 | `draftplane theme [dark\|light\|quartz\|system]` | show or set the theme                                |
+| `draftplane user [name]`                         | show or set your user name                           |
 | `draftplane mcp`                                 | the stdio MCP server for your agent                  |
 | `draftplane version`                             | the installed version                                |
 

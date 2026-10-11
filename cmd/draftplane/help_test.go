@@ -47,7 +47,7 @@ func TestTheCommandTable(t *testing.T) {
 	for _, c := range commands {
 		got = append(got, c.name)
 	}
-	want := []string{"review", "theme", "mcp", "version"}
+	want := []string{"review", "theme", "user", "mcp", "version"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("commands = %v, want %v", got, want)
 	}
