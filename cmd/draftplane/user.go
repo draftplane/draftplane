@@ -43,7 +43,7 @@ func runUser(w io.Writer, args []string) error {
 		if err := config.SetMachinePseudonym(path, name); err != nil {
 			return err
 		}
-		_, err := fmt.Fprintf(w, "user name set to %s in %s\n", name, path)
+		_, err := fmt.Fprintf(w, "user name set to %s\n", name)
 		return err
 
 	default:

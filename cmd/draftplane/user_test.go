@@ -60,13 +60,11 @@ func TestRunUserGetPrintsAMintedNameAndIsStable(t *testing.T) {
 // discoverability point (theme_test.go's TestRunThemeSetWritesAndConfirms
 // makes the same assertion for theme.json).
 func TestRunUserSetThenGetRoundTrips(t *testing.T) {
-	path := userHome(t)
-
 	var setOut bytes.Buffer
 	if err := runUser(&setOut, []string{"luke"}); err != nil {
 		t.Fatalf("runUser set luke: %v", err)
 	}
-	if want := "user name set to luke in " + path + "\n"; setOut.String() != want {
+	if want := "user name set to luke" + "\n"; setOut.String() != want {
 		t.Errorf("set output = %q, want %q", setOut.String(), want)
 	}
 
